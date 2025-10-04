@@ -1,0 +1,2313 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>VoiceTel Phone</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family:
+					-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+					Oxygen, Ubuntu, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				padding: 20px;
+			}
+
+			.container {
+				background: white;
+				border-radius: 20px;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+				max-width: 500px;
+				width: 100%;
+				overflow: hidden;
+			}
+
+			.header {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				padding: 30px;
+				text-align: left;
+				position: relative;
+			}
+
+			.header h1 {
+				font-size: 28px;
+				margin-bottom: 10px;
+			}
+
+			.status {
+				display: inline-block;
+				padding: 5px 15px;
+				border-radius: 20px;
+				background: rgba(255, 255, 255, 0.2);
+				font-size: 14px;
+				margin-top: 10px;
+			}
+
+			.status.registered {
+				background: rgba(76, 175, 80, 0.3);
+			}
+
+			.header-buttons {
+				position: absolute;
+				top: 20px;
+				right: 20px;
+				display: flex;
+				gap: 8px;
+			}
+
+			.header-toggle {
+				background: rgba(255, 255, 255, 0.2);
+				border: none;
+				color: white;
+				width: 40px;
+				height: 40px;
+				border-radius: 50%;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 20px;
+				transition: all 0.3s;
+			}
+
+			.header-toggle:hover {
+				background: rgba(255, 255, 255, 0.3);
+				transform: rotate(90deg);
+			}
+
+			.header-toggle.active {
+				background: rgba(255, 255, 255, 0.4);
+			}
+
+			.content {
+				padding: 30px;
+			}
+
+			.section {
+				margin-bottom: 25px;
+			}
+
+			.section.config-section {
+				max-height: 0;
+				overflow: hidden;
+				transition: max-height 0.4s ease-out, margin-bottom 0.4s ease-out;
+				margin-bottom: 0;
+			}
+
+			.section.config-section.visible {
+				max-height: 1000px;
+				margin-bottom: 25px;
+			}
+
+			.section.log-section {
+				max-height: 0;
+				overflow: hidden;
+				transition: max-height 0.4s ease-out, margin-bottom 0.4s ease-out;
+				margin-bottom: 0;
+			}
+
+			.section.log-section.visible {
+				max-height: 800px;
+				margin-bottom: 25px;
+			}
+
+			.section.hideable {
+				display: block;
+				transition: opacity 0.3s ease-out;
+			}
+
+			.section.hideable.hidden {
+				display: none;
+			}
+
+			.section h2 {
+				font-size: 18px;
+				color: #333;
+				margin-bottom: 15px;
+				padding-bottom: 8px;
+				border-bottom: 2px solid #f0f0f0;
+			}
+
+			.form-group {
+				margin-bottom: 15px;
+			}
+
+			.form-group label {
+				display: block;
+				margin-bottom: 5px;
+				color: #666;
+				font-size: 14px;
+			}
+
+			.form-group label small {
+				font-weight: normal;
+				display: block;
+				margin-top: 2px;
+			}
+
+			.form-group input[type="checkbox"] {
+				width: auto;
+				margin-right: 8px;
+			}
+
+			.form-group input {
+				width: 100%;
+				padding: 10px;
+				border: 2px solid #e0e0e0;
+				border-radius: 8px;
+				font-size: 14px;
+				transition: border-color 0.3s;
+			}
+
+			.form-group input:focus {
+				outline: none;
+				border-color: #667eea;
+			}
+
+			.button-group {
+				display: flex;
+				gap: 10px;
+				margin-top: 15px;
+			}
+
+			button {
+				flex: 1;
+				padding: 12px 20px;
+				border: none;
+				border-radius: 8px;
+				font-size: 14px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.3s;
+			}
+
+			.btn-primary {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+			}
+
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+			}
+
+			.btn-success {
+				background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+				color: white;
+			}
+
+			.btn-danger {
+				background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+				color: white;
+			}
+
+			.btn-secondary {
+				background: #f0f0f0;
+				color: #333;
+			}
+
+			button:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
+			}
+
+			.call-controls {
+				display: none;
+				text-align: center;
+				padding: 20px;
+				background: #f8f8f8;
+				border-radius: 12px;
+				margin-top: 20px;
+			}
+
+			.call-controls.active {
+				display: block;
+			}
+
+			.call-info {
+				font-size: 16px;
+				color: #666;
+				margin-bottom: 15px;
+			}
+
+			.dialpad {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 10px;
+				max-width: 250px;
+				margin: 20px auto;
+			}
+
+			.dialpad button {
+				aspect-ratio: 1;
+				font-size: 20px;
+				background: white;
+				border: 2px solid #e0e0e0;
+				color: #333;
+			}
+
+			.dialpad button:hover {
+				background: #f0f0f0;
+				transform: none;
+				box-shadow: none;
+			}
+
+			#callNumber {
+				text-align: center;
+				font-size: 18px;
+				margin-bottom: 10px;
+				font-family: monospace;
+			}
+
+			.log {
+				background: #f8f8f8;
+				border-radius: 8px;
+				padding: 15px;
+				max-height: 150px;
+				overflow-y: auto;
+				font-family: monospace;
+				font-size: 12px;
+				color: #666;
+			}
+
+			.log-entry {
+				margin-bottom: 5px;
+				padding: 5px;
+				background: white;
+				border-radius: 4px;
+			}
+
+			.audio-container {
+				display: none;
+			}
+
+			.incoming-call {
+				display: none;
+				background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+				color: white;
+				padding: 20px;
+				border-radius: 12px;
+				margin-bottom: 20px;
+				animation: pulse 1.5s infinite;
+			}
+
+			.incoming-call.active {
+				display: block;
+			}
+
+			.incoming-caller {
+				font-size: 20px;
+				font-weight: bold;
+				margin-bottom: 10px;
+				text-align: center;
+			}
+
+			.incoming-number {
+				font-size: 16px;
+				margin-bottom: 15px;
+				text-align: center;
+				opacity: 0.9;
+			}
+
+			.incoming-buttons {
+				display: flex;
+				gap: 10px;
+			}
+
+			.btn-answer {
+				background: white;
+				color: #4caf50;
+				flex: 1;
+			}
+
+			.btn-answer:hover {
+				background: #f0f0f0;
+			}
+
+			.btn-decline {
+				background: rgba(255, 255, 255, 0.2);
+				color: white;
+				flex: 1;
+			}
+
+			.btn-decline:hover {
+				background: rgba(255, 255, 255, 0.3);
+			}
+
+			.encryption-info {
+				background: #e8f4f8;
+				border: 1px solid #b3d9e8;
+				border-radius: 8px;
+				padding: 10px;
+				margin-top: 10px;
+				font-size: 12px;
+				color: #2c5aa0;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<div class="header-buttons">
+					<button class="header-toggle active" onclick="showPhone()" title="Phone">
+						📞
+					</button>
+					<button class="header-toggle" onclick="showLog()" title="Event Log">
+						📋
+					</button>
+					<button class="header-toggle" onclick="showSettings()" title="Settings">
+						⚙️
+					</button>
+				</div>
+				<h1>🎤 VoiceTel Phone</h1>
+				<div id="status" class="status">Disconnected</div>
+			</div>
+
+			<div class="content">
+				<div class="section hideable" id="registerSection">
+					<div class="button-group">
+						<button
+							id="registerBtn"
+							class="btn-primary"
+							onclick="register()"
+						>
+							Register
+						</button>
+						<button
+							id="unregisterBtn"
+							class="btn-secondary"
+							onclick="unregister()"
+							disabled
+						>
+							Unregister
+						</button>
+					</div>
+				</div>
+
+				<div class="section config-section" id="configSection">
+					<h2>SIP Configuration</h2>
+					<input
+						type="hidden"
+						id="sipServer"
+						value="wss://tls.voicetel.com:443"
+					/>
+					<div class="form-group">
+						<label
+							>Username
+							<small style="color: #999"
+								>Must be exactly 10 digits (your phone
+								number)</small
+							></label
+						>
+						<input
+							type="tel"
+							id="username"
+							placeholder="e.g. 5551234567 or (555) 123-4567"
+							maxlength="10"
+							pattern="[0-9]{10}"
+							required
+							inputmode="numeric"
+						/>
+						<small
+							id="usernameError"
+							style="
+								color: #d32f2f;
+								display: none;
+								margin-top: 5px;
+							"
+							>Username must be exactly 10 numeric digits</small
+						>
+					</div>
+					<div class="form-group">
+						<label>Password</label>
+						<input
+							type="password"
+							id="password"
+							placeholder="password"
+						/>
+					</div>
+					<div class="form-group">
+						<label>Display Name</label>
+						<input
+							type="text"
+							id="displayName"
+							placeholder="Your Name"
+						/>
+					</div>
+					<div class="form-group">
+						<label
+							>Caller ID Number
+							<small style="color: #999"
+								>Optional - North American format only (10
+								digits). Will be combined with Display Name for
+								outbound caller ID.</small
+							></label
+						>
+						<input
+							type="tel"
+							id="callerID"
+							placeholder="e.g. 8005551234 or (800) 555-1234"
+							maxlength="10"
+							pattern="[2-9][0-9]{2}[2-9][0-9]{6}"
+							inputmode="numeric"
+						/>
+						<small
+							id="callerIDError"
+							style="
+								color: #d32f2f;
+								display: none;
+								margin-top: 5px;
+							"
+							>Please enter a valid 10-digit North American phone
+							number</small
+						>
+					</div>
+					<div
+						class="form-group"
+						style="
+							background: #f8f8f8;
+							padding: 15px;
+							border-radius: 8px;
+							margin-top: 20px;
+						"
+					>
+						<label
+							style="
+								display: flex;
+								align-items: center;
+								cursor: pointer;
+								color: #667eea;
+								font-weight: 600;
+							"
+						>
+							<input
+								type="checkbox"
+								id="saveCredentials"
+								style="width: auto; margin-right: 8px"
+							/>
+							Save credentials securely (device fingerprint
+							encryption)
+						</label>
+						<small
+							style="color: #999; display: block; margin-top: 8px"
+						>
+							⚠️ Security Notice: Credentials are encrypted using
+							a unique fingerprint of your device/browser and
+							stored in cookies for 30 days. No external services
+							are contacted. Cookies are set with Secure and
+							SameSite=Strict flags. Only enable on trusted
+							personal devices.
+						</small>
+						<div
+							id="encryptionInfo"
+							class="encryption-info"
+							style="display: none"
+						></div>
+						<button
+							class="btn-secondary"
+							onclick="CookieStore.clearAll()"
+							style="
+								margin-top: 10px;
+								padding: 8px 16px;
+								font-size: 12px;
+							"
+						>
+							Clear All Saved Data
+						</button>
+					</div>
+				</div>
+
+				<div class="section hideable" id="callSection">
+					<h2>Make a Call / Send DTMF</h2>
+
+					<!-- Incoming Call UI -->
+					<div id="incomingCall" class="incoming-call">
+						<div
+							style="
+								text-align: center;
+								font-size: 32px;
+								margin-bottom: 10px;
+							"
+						>
+							📞
+						</div>
+						<div class="incoming-caller" id="incomingCallerName">
+							Incoming Call
+						</div>
+						<div class="incoming-number" id="incomingCallerNumber">
+							Unknown Number
+						</div>
+						<div class="incoming-buttons">
+							<button class="btn-answer" onclick="answerCall()">
+								✓ Answer
+							</button>
+							<button class="btn-decline" onclick="declineCall()">
+								✗ Decline
+							</button>
+						</div>
+						<div
+							style="
+								text-align: center;
+								margin-top: 10px;
+								font-size: 11px;
+								opacity: 0.8;
+							"
+						>
+							Press Enter to answer • Escape to decline
+						</div>
+					</div>
+
+					<div class="form-group">
+						<input
+							type="text"
+							id="callNumber"
+							placeholder="Enter number to dial / DTMF during call"
+							inputmode="numeric"
+						/>
+					</div>
+
+					<div class="dialpad">
+						<button onclick="appendNumber('1')">1</button>
+						<button onclick="appendNumber('2')">2</button>
+						<button onclick="appendNumber('3')">3</button>
+						<button onclick="appendNumber('4')">4</button>
+						<button onclick="appendNumber('5')">5</button>
+						<button onclick="appendNumber('6')">6</button>
+						<button onclick="appendNumber('7')">7</button>
+						<button onclick="appendNumber('8')">8</button>
+						<button onclick="appendNumber('9')">9</button>
+						<button onclick="appendNumber('*')">*</button>
+						<button onclick="appendNumber('0')">0</button>
+						<button onclick="appendNumber('#')">#</button>
+					</div>
+
+					<div class="form-group" style="margin-top: 15px">
+						<label
+							style="
+								display: flex;
+								align-items: center;
+								cursor: pointer;
+							"
+						>
+							<input
+								type="checkbox"
+								id="hideCallerID"
+								style="width: auto; margin-right: 8px"
+							/>
+							Hide Caller ID (Privacy)
+						</label>
+					</div>
+
+					<div class="button-group">
+						<button
+							id="callBtn"
+							class="btn-success"
+							onclick="makeCall()"
+							disabled
+						>
+							📞 Call
+						</button>
+						<button class="btn-secondary" onclick="clearNumber()">
+							Clear
+						</button>
+					</div>
+
+					<div id="callControls" class="call-controls">
+						<div class="call-info">
+							<div id="callStatus">Call in progress</div>
+							<div id="callDuration">00:00</div>
+						</div>
+						<div id="ringingIndicator" class="ringing-indicator">
+							🔔 Ringing...
+						</div>
+						<div
+							class="button-group"
+							style="max-width: 300px; margin: 0 auto"
+						>
+							<button
+								id="muteBtn"
+								class="btn-secondary"
+								onclick="toggleMute()"
+							>
+								Mute
+							</button>
+							<button
+								id="hangupBtn"
+								class="btn-danger"
+								onclick="hangup()"
+							>
+								Hang Up
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="section log-section" id="logSection">
+					<h2>Event Log</h2>
+					<div id="log" class="log"></div>
+					<div
+						style="
+							text-align: center;
+							margin-top: 10px;
+							color: #999;
+							font-size: 12px;
+						"
+					>
+						WebSocket: wss://tls.voicetel.com:443 | SIP Domain:
+						tls.voicetel.com
+					</div>
+					<details
+						style="
+							margin-top: 15px;
+							padding: 10px;
+							background: #f8f8f8;
+							border-radius: 8px;
+						"
+					>
+						<summary
+							style="
+								cursor: pointer;
+								color: #667eea;
+								font-weight: 600;
+							"
+						>
+							⚠️ Troubleshooting Tips
+						</summary>
+						<div
+							style="
+								margin-top: 10px;
+								font-size: 13px;
+								color: #666;
+								line-height: 1.6;
+							"
+						>
+							<p><strong>Media Negotiation Errors:</strong></p>
+							<p>
+								If you see "fingerprint attribute" errors or
+								calls fail immediately after connecting, the
+								VoiceTel media gateway may not be configured for
+								WebRTC. The server appears to be sending
+								non-secure RTP (RTP/AVP) while browsers require
+								secure media (DTLS-SRTP).
+							</p>
+							<p style="margin-top: 10px">
+								<strong>To resolve this issue:</strong>
+							</p>
+							<ul style="margin-left: 20px">
+								<li>
+									Contact VoiceTel support to enable
+									WebRTC/DTLS-SRTP on tls.voicetel.com
+								</li>
+								<li>
+									Request they configure secure RTP
+									(SAVP/SAVPF) for WebRTC endpoints
+								</li>
+								<li>
+									Verify your account is authorized for the
+									tls.voicetel.com domain
+								</li>
+								<li>
+									Ask about WebRTC-specific server endpoints
+									if available
+								</li>
+							</ul>
+							<p style="margin-top: 10px">
+								<strong>Other Common Issues:</strong>
+							</p>
+							<ul style="margin-left: 20px">
+								<li>
+									Ensure microphone permissions are granted
+								</li>
+								<li>
+									Try using Chrome or Firefox (latest
+									versions)
+								</li>
+								<li>
+									Check that your firewall allows WebRTC
+									traffic
+								</li>
+								<li>Disable VPN if you're using one</li>
+							</ul>
+						</div>
+					</details>
+				</div>
+			</div>
+
+			<div class="audio-container">
+				<audio id="remoteAudio" autoplay></audio>
+				<audio id="localAudio" autoplay muted></audio>
+			</div>
+		</div>
+
+		<!-- Load SIP.js library -->
+		<script src="https://cdn.jsdelivr.net/npm/sip.js@0.15.11/dist/sip.min.js"></script>
+		<script>
+			// Show phone interface
+			function showPhone() {
+				const configSection = document.getElementById('configSection');
+				const registerSection = document.getElementById('registerSection');
+				const callSection = document.getElementById('callSection');
+				const logSection = document.getElementById('logSection');
+				const buttons = document.querySelectorAll('.header-toggle');
+				
+				// Show phone sections
+				registerSection.classList.remove('hidden');
+				callSection.classList.remove('hidden');
+				
+				// Hide other sections
+				configSection.classList.remove('visible');
+				logSection.classList.remove('visible');
+				
+				// Update button states
+				buttons[0].classList.add('active');
+				buttons[1].classList.remove('active');
+				buttons[2].classList.remove('active');
+			}
+
+			// Show log
+			function showLog() {
+				const configSection = document.getElementById('configSection');
+				const registerSection = document.getElementById('registerSection');
+				const callSection = document.getElementById('callSection');
+				const logSection = document.getElementById('logSection');
+				const buttons = document.querySelectorAll('.header-toggle');
+				
+				// Show log section
+				logSection.classList.add('visible');
+				
+				// Hide other sections
+				registerSection.classList.add('hidden');
+				callSection.classList.add('hidden');
+				configSection.classList.remove('visible');
+				
+				// Update button states
+				buttons[0].classList.remove('active');
+				buttons[1].classList.add('active');
+				buttons[2].classList.remove('active');
+			}
+
+			// Show settings
+			function showSettings() {
+				const configSection = document.getElementById('configSection');
+				const registerSection = document.getElementById('registerSection');
+				const callSection = document.getElementById('callSection');
+				const logSection = document.getElementById('logSection');
+				const buttons = document.querySelectorAll('.header-toggle');
+				
+				// Show settings section
+				configSection.classList.add('visible');
+				
+				// Hide other sections
+				registerSection.classList.add('hidden');
+				callSection.classList.add('hidden');
+				logSection.classList.remove('visible');
+				
+				// Update button states
+				buttons[0].classList.remove('active');
+				buttons[1].classList.remove('active');
+				buttons[2].classList.add('active');
+			}
+
+			// Cookie storage implementation with browser fingerprint-based encryption
+			const CookieStore = {
+				deviceFingerprint: null,
+				hashedKey: null,
+
+				hashString: function (str) {
+					let hash = 2166136261;
+					for (let i = 0; i < str.length; i++) {
+						hash ^= str.charCodeAt(i);
+						hash = Math.imul(hash, 16777619);
+					}
+					let hexHash = (hash >>> 0).toString(16);
+
+					let complexKey = hexHash;
+					let tempStr = str + hexHash;
+					for (let j = 0; j < 3; j++) {
+						hash = 2166136261;
+						for (let i = 0; i < tempStr.length; i++) {
+							hash ^= tempStr.charCodeAt(i);
+							hash = Math.imul(hash, 16777619);
+						}
+						hexHash = (hash >>> 0).toString(16);
+						complexKey += hexHash;
+						tempStr = tempStr + hexHash;
+					}
+
+					return complexKey;
+				},
+
+				generateDeviceFingerprint: function () {
+					const fingerprint = [];
+
+					fingerprint.push(navigator.userAgent);
+					fingerprint.push(
+						navigator.language || navigator.userLanguage,
+					);
+					fingerprint.push((navigator.languages || []).join(","));
+					fingerprint.push(
+						navigator.hardwareConcurrency || "unknown",
+					);
+					fingerprint.push(screen.width + "x" + screen.height);
+					fingerprint.push(screen.colorDepth);
+					fingerprint.push(screen.pixelDepth);
+					fingerprint.push(
+						Intl.DateTimeFormat().resolvedOptions().timeZone,
+					);
+					fingerprint.push(new Date().getTimezoneOffset());
+					fingerprint.push(navigator.platform);
+
+					if (navigator.deviceMemory) {
+						fingerprint.push(navigator.deviceMemory);
+					}
+
+					if (navigator.connection) {
+						fingerprint.push(navigator.connection.effectiveType);
+					}
+
+					try {
+						const canvas = document.createElement("canvas");
+						const ctx = canvas.getContext("2d");
+						ctx.textBaseline = "top";
+						ctx.font = "14px Arial";
+						ctx.fillStyle = "#f60";
+						ctx.fillRect(125, 1, 62, 20);
+						ctx.fillStyle = "#069";
+						ctx.fillText("VoiceTel RTC", 2, 15);
+						ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+						ctx.fillText("VoiceTel RTC", 4, 17);
+						fingerprint.push(canvas.toDataURL());
+					} catch (e) {
+						fingerprint.push("canvas-error");
+					}
+
+					try {
+						const canvas = document.createElement("canvas");
+						const gl =
+							canvas.getContext("webgl") ||
+							canvas.getContext("experimental-webgl");
+						if (gl) {
+							const debugInfo = gl.getExtension(
+								"WEBGL_debug_renderer_info",
+							);
+							if (debugInfo) {
+								fingerprint.push(
+									gl.getParameter(
+										debugInfo.UNMASKED_VENDOR_WEBGL,
+									),
+								);
+								fingerprint.push(
+									gl.getParameter(
+										debugInfo.UNMASKED_RENDERER_WEBGL,
+									),
+								);
+							}
+						}
+					} catch (e) {
+						fingerprint.push("webgl-error");
+					}
+
+					return fingerprint.join("|||");
+				},
+
+				initializeFingerprint: function () {
+					this.deviceFingerprint = this.generateDeviceFingerprint();
+					this.hashedKey = this.hashString(
+						this.deviceFingerprint + "_voicetel_salt",
+					);
+					this.displayEncryptionInfo();
+					log("Encryption key initialized using device fingerprint");
+					return this.deviceFingerprint;
+				},
+
+				displayEncryptionInfo: function () {
+					const infoEl = document.getElementById("encryptionInfo");
+					if (infoEl) {
+						const hashPreview = this.hashedKey
+							? this.hashedKey.substring(0, 8)
+							: "";
+						const fingerprintPreview = this.deviceFingerprint
+							? this.hashString(this.deviceFingerprint).substring(
+									0,
+									6,
+								)
+							: "";
+						infoEl.innerHTML = `🔒 Encryption: Device fingerprint [${fingerprintPreview}...] Key: [${hashPreview}...]`;
+						infoEl.style.display = "block";
+					}
+				},
+
+				getEncryptionKey: function () {
+					if (!this.hashedKey) {
+						this.initializeFingerprint();
+					}
+					return (
+						this.hashedKey || this.hashString("default_key_salt")
+					);
+				},
+
+				encrypt: function (text) {
+					if (!text) return "";
+					const key = this.getEncryptionKey();
+					let encrypted = "";
+					for (let i = 0; i < text.length; i++) {
+						encrypted += String.fromCharCode(
+							text.charCodeAt(i) ^ key.charCodeAt(i % key.length),
+						);
+					}
+					return btoa(encrypted);
+				},
+
+				decrypt: function (text) {
+					if (!text) return "";
+					const key = this.getEncryptionKey();
+					try {
+						let decrypted = atob(text);
+						let result = "";
+						for (let i = 0; i < decrypted.length; i++) {
+							result += String.fromCharCode(
+								decrypted.charCodeAt(i) ^
+									key.charCodeAt(i % key.length),
+							);
+						}
+						return result;
+					} catch (e) {
+						console.error("Decryption failed:", e);
+						return "";
+					}
+				},
+
+				setCookie: function (name, value, days = 30) {
+					const date = new Date();
+					date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+					const expires = "; expires=" + date.toUTCString();
+					const secure =
+						location.protocol === "https:" ? "; Secure" : "";
+					const sameSite = "; SameSite=Strict";
+					document.cookie =
+						name +
+						"=" +
+						(value || "") +
+						expires +
+						"; path=/" +
+						secure +
+						sameSite;
+				},
+
+				getCookie: function (name) {
+					const nameEQ = name + "=";
+					const ca = document.cookie.split(";");
+					for (let i = 0; i < ca.length; i++) {
+						let c = ca[i];
+						while (c.charAt(0) === " ")
+							c = c.substring(1, c.length);
+						if (c.indexOf(nameEQ) === 0)
+							return c.substring(nameEQ.length, c.length);
+					}
+					return null;
+				},
+
+				deleteCookie: function (name) {
+					document.cookie =
+						name +
+						"=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+				},
+
+				saveCredentials: function () {
+					const consent = document.getElementById("saveCredentials");
+					if (!consent || !consent.checked) {
+						this.deleteCookie("sip_username");
+						this.deleteCookie("sip_password");
+						this.deleteCookie("sip_displayname");
+						this.deleteCookie("sip_callerid");
+						this.deleteCookie("sip_key_validator");
+						return;
+					}
+
+					const username = document.getElementById("username").value;
+					const password = document.getElementById("password").value;
+					const displayName =
+						document.getElementById("displayName").value;
+					const callerID = document.getElementById("callerID").value;
+
+					if (username && !/^\d{10}$/.test(username)) {
+						log(
+							"⚠️ Cannot save credentials - username must be exactly 10 numeric digits",
+						);
+						return;
+					}
+
+					this.getEncryptionKey();
+
+					if (username)
+						this.setCookie(
+							"sip_username",
+							this.encrypt(username),
+							30,
+						);
+					if (password)
+						this.setCookie(
+							"sip_password",
+							this.encrypt(password),
+							30,
+						);
+					if (displayName)
+						this.setCookie("sip_displayname", displayName, 30);
+					if (callerID) this.setCookie("sip_callerid", callerID, 30);
+
+					if (this.hashedKey) {
+						const validator = this.hashedKey.substring(0, 16);
+						this.setCookie("sip_key_validator", validator, 30);
+					}
+
+					log("Credentials saved with device fingerprint encryption");
+				},
+
+				loadCredentials: function () {
+					this.initializeFingerprint();
+
+					const savedValidator = this.getCookie("sip_key_validator");
+					const currentValidator = this.hashedKey
+						? this.hashedKey.substring(0, 16)
+						: null;
+
+					if (
+						savedValidator &&
+						currentValidator &&
+						savedValidator !== currentValidator
+					) {
+						log(
+							"⚠️ Device fingerprint changed - cannot decrypt saved credentials",
+						);
+						log(
+							"This can happen if browser, hardware, or settings changed",
+						);
+						this.clearAll();
+						return;
+					}
+
+					const savedUsername = this.getCookie("sip_username");
+					const savedPassword = this.getCookie("sip_password");
+					const savedDisplayName = this.getCookie("sip_displayname");
+					const savedCallerID = this.getCookie("sip_callerid");
+
+					if (savedUsername) {
+						try {
+							const decryptedUsername =
+								this.decrypt(savedUsername);
+
+							if (
+								!decryptedUsername ||
+								!/^\d{10}$/.test(decryptedUsername) ||
+								decryptedUsername.length !== 10
+							) {
+								log(
+									"⚠️ Invalid or corrupted credentials detected - clearing stored data",
+								);
+								log(
+									"Username validation failed: must be exactly 10 numeric digits",
+								);
+								this.clearAll();
+								return;
+							}
+
+							document.getElementById("username").value =
+								decryptedUsername;
+							document.getElementById("saveCredentials").checked =
+								true;
+
+							if (savedPassword) {
+								try {
+									document.getElementById("password").value =
+										this.decrypt(savedPassword);
+								} catch (e) {
+									console.error(
+										"Failed to decrypt password:",
+										e,
+									);
+									log(
+										"⚠️ Password decryption failed - clearing all credentials",
+									);
+									this.clearAll();
+									return;
+								}
+							}
+
+							if (savedDisplayName) {
+								document.getElementById("displayName").value =
+									savedDisplayName;
+							}
+							if (savedCallerID) {
+								document.getElementById("callerID").value =
+									savedCallerID;
+							}
+
+							log(
+								"Credentials loaded from device-encrypted storage",
+							);
+							log(
+								`Loaded username: ${decryptedUsername.substring(0, 3)}*******`,
+							);
+						} catch (e) {
+							console.error("Failed to decrypt username:", e);
+							log(
+								"⚠️ Credential decryption failed - clearing stored data",
+							);
+							this.clearAll();
+							return;
+						}
+					} else if (
+						savedPassword ||
+						savedDisplayName ||
+						savedCallerID
+					) {
+						log(
+							"⚠️ Incomplete credentials detected - clearing stored data",
+						);
+						this.clearAll();
+					}
+				},
+
+				clearAll: function () {
+					this.deleteCookie("sip_username");
+					this.deleteCookie("sip_password");
+					this.deleteCookie("sip_displayname");
+					this.deleteCookie("sip_callerid");
+					this.deleteCookie("sip_key_validator");
+					document.getElementById("saveCredentials").checked = false;
+					log("All stored credentials cleared");
+				},
+			};
+
+			// Wait for DOM and library to load
+			window.addEventListener("DOMContentLoaded", function () {
+				if (typeof SIP === "undefined") {
+					console.error("SIP.js library failed to load");
+					log(
+						"Error: SIP.js library not loaded. Please refresh the page.",
+					);
+					alert(
+						"SIP.js library failed to load. Please check your internet connection and refresh the page.",
+					);
+				} else {
+					console.log("SIP.js version:", SIP.version || "unknown");
+					log("VoiceTel RTC Phone v3.2 ready");
+					log("Smart DTMF with automatic RFC 2833/SIP INFO fallback");
+					log("SIP.js " + (SIP.version || "0.15.x") + " loaded");
+					log("Server: tls.voicetel.com (wss://443)");
+					log(
+						"Using device fingerprint for encryption (no external calls)",
+					);
+				}
+
+				CookieStore.loadCredentials();
+
+				// Both sections start hidden by default
+
+				document
+					.getElementById("username")
+					.addEventListener("input", function (e) {
+						const value = e.target.value.replace(/\D/g, "");
+						e.target.value = value.substring(0, 10);
+
+						const errorEl =
+							document.getElementById("usernameError");
+						if (value && value.length !== 10) {
+							errorEl.style.display = "block";
+						} else {
+							errorEl.style.display = "none";
+						}
+						
+						document.addEventListener("keydown", function (e) {
+							if (incomingSession) {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									answerCall();
+								} else if (e.key === "Escape") {
+									e.preventDefault();
+									declineCall();
+								}
+							}
+						});
+					});
+
+				document
+					.getElementById("callerID")
+					.addEventListener("input", function (e) {
+						const value = e.target.value.replace(/\D/g, "");
+						e.target.value = value.substring(0, 10);
+
+						const errorEl =
+							document.getElementById("callerIDError");
+						if (value && !validateNorthAmericanNumber(value)) {
+							errorEl.style.display = "block";
+						} else {
+							errorEl.style.display = "none";
+						}
+					});
+
+				document
+					.getElementById("username")
+					.addEventListener("change", function () {
+						if (
+							document.getElementById("saveCredentials").checked
+						) {
+							CookieStore.saveCredentials();
+						}
+					});
+
+				document
+					.getElementById("password")
+					.addEventListener("change", function () {
+						if (
+							document.getElementById("saveCredentials").checked
+						) {
+							CookieStore.saveCredentials();
+						}
+					});
+
+				document
+					.getElementById("displayName")
+					.addEventListener("change", function () {
+						if (
+							document.getElementById("saveCredentials").checked
+						) {
+							CookieStore.saveCredentials();
+						}
+					});
+
+				document
+					.getElementById("callerID")
+					.addEventListener("change", function () {
+						if (
+							document.getElementById("saveCredentials").checked
+						) {
+							CookieStore.saveCredentials();
+						}
+					});
+
+				document
+					.getElementById("saveCredentials")
+					.addEventListener("change", function () {
+						CookieStore.saveCredentials();
+					});
+			});
+
+			let savedConfig = {};
+			let registeredUsername = null;
+
+			let userAgent = null;
+			let currentSession = null;
+			let incomingSession = null;
+			let incomingCallTimeout = null;
+			let isRegistered = false;
+			let isMuted = false;
+			let callTimer = null;
+			let callStartTime = null;
+			let ringingAudio = null;
+
+			function validateNorthAmericanNumber(number) {
+				const cleaned = number.replace(/\D/g, "");
+
+				if (cleaned.length !== 10) return false;
+
+				const npaFirstDigit = parseInt(cleaned[0]);
+				const nxxFirstDigit = parseInt(cleaned[3]);
+
+				return (
+					npaFirstDigit >= 2 &&
+					npaFirstDigit <= 9 &&
+					nxxFirstDigit >= 2 &&
+					nxxFirstDigit <= 9
+				);
+			}
+
+			function createRingingTone() {
+				const audioContext = new (window.AudioContext ||
+					window.webkitAudioContext)();
+
+				const oscillator1 = audioContext.createOscillator();
+				const oscillator2 = audioContext.createOscillator();
+				const gainNode = audioContext.createGain();
+
+				oscillator1.frequency.value = 440;
+				oscillator2.frequency.value = 480;
+				oscillator1.type = "sine";
+				oscillator2.type = "sine";
+
+				gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+
+				const ringPattern = () => {
+					const now = audioContext.currentTime;
+					gainNode.gain.setValueAtTime(0.1, now);
+					gainNode.gain.setValueAtTime(0.1, now + 2);
+					gainNode.gain.setValueAtTime(0, now + 2.01);
+					gainNode.gain.setValueAtTime(0, now + 6);
+				};
+
+				oscillator1.connect(gainNode);
+				oscillator2.connect(gainNode);
+				gainNode.connect(audioContext.destination);
+
+				oscillator1.start();
+				oscillator2.start();
+
+				ringPattern();
+				const ringInterval = setInterval(ringPattern, 6000);
+
+				return {
+					stop: () => {
+						clearInterval(ringInterval);
+						gainNode.gain.setValueAtTime(
+							0,
+							audioContext.currentTime,
+						);
+						setTimeout(() => {
+							oscillator1.stop();
+							oscillator2.stop();
+							audioContext.close();
+						}, 100);
+					},
+				};
+			}
+
+			function startRinging() {
+				document.getElementById("ringingIndicator").style.display =
+					"block";
+				document.getElementById("callStatus").textContent =
+					"Ringing...";
+
+				try {
+					ringingAudio = createRingingTone();
+				} catch (e) {
+					log("Could not generate ringing tone: " + e.message);
+				}
+			}
+
+			function stopRinging() {
+				document.getElementById("ringingIndicator").style.display =
+					"none";
+				document.getElementById("callStatus").textContent =
+					"Call in progress";
+
+				if (ringingAudio) {
+					ringingAudio.stop();
+					ringingAudio = null;
+				}
+			}
+
+			function log(message) {
+				const logDiv = document.getElementById("log");
+				const entry = document.createElement("div");
+				entry.className = "log-entry";
+				const timestamp = new Date().toLocaleTimeString();
+				entry.textContent = `[${timestamp}] ${message}`;
+				logDiv.insertBefore(entry, logDiv.firstChild);
+
+				while (logDiv.children.length > 10) {
+					logDiv.removeChild(logDiv.lastChild);
+				}
+			}
+
+			function updateStatus(text, registered = false) {
+				const statusEl = document.getElementById("status");
+				statusEl.textContent = text;
+				if (registered) {
+					statusEl.classList.add("registered");
+				} else {
+					statusEl.classList.remove("registered");
+				}
+			}
+
+			function register() {
+				if (typeof SIP === "undefined") {
+					alert(
+						"SIP.js library is not loaded. Please refresh the page.",
+					);
+					log("Error: SIP.js library not available");
+					return;
+				}
+
+				const server = document.getElementById("sipServer").value;
+				const username = document.getElementById("username").value;
+				const password = document.getElementById("password").value;
+				const displayName =
+					document.getElementById("displayName").value || username;
+				const callerID = document.getElementById("callerID").value;
+
+				if (!server || !username || !password) {
+					alert("Please fill in all required fields");
+					return;
+				}
+
+				if (!/^\d{10}$/.test(username)) {
+					alert("Username must be exactly 10 numeric digits");
+					document.getElementById("usernameError").style.display =
+						"block";
+					return;
+				}
+
+				savedConfig = {
+					server: "wss://tls.voicetel.com:443",
+					username,
+					displayName,
+					callerID,
+				};
+				registeredUsername = username;
+
+				try {
+					log("Starting registration...");
+					log("Connecting to VoiceTel server (tls.voicetel.com)...");
+					log("SIP.js version: " + (SIP.version || "unknown"));
+					log("SIP REGISTER sent");
+
+					const uri = `sip:${username}@tls.voicetel.com`;
+
+					const transportOptions = {
+						wsServers: [server],
+						traceSip: true,
+						wsServerMaxReconnectionAttempts: 5,
+						wsServerReconnectionTimeout: 4,
+					};
+
+					const userAgentOptions = {
+						uri: uri,
+						transportOptions: transportOptions,
+						authorizationUser: username,
+						password: password,
+						displayName: displayName,
+						register: true,
+						registerOptions: {
+							registrar: `sip:tls.voicetel.com`,
+							expires: 300,
+						},
+						sessionDescriptionHandlerFactoryOptions: {
+							constraints: {
+								audio: true,
+								video: false,
+							},
+							peerConnectionOptions: {
+								rtcConfiguration: {
+									iceServers: [
+										{
+											urls: "stun:stun.l.google.com:19302",
+										},
+										{
+											urls: "stun:stun1.l.google.com:19302",
+										},
+									],
+								},
+							},
+						},
+						hackWssInTransport: false,
+						hackIpInContact: true,
+						dtmfType: "rtp",
+					};
+
+					userAgent = new SIP.UA(userAgentOptions);
+
+					userAgent.on("registered", () => {
+						isRegistered = true;
+						updateStatus("Registered", true);
+						log("Successfully registered");
+						log("SIP/2.0 200 OK");
+
+						document.getElementById("registerBtn").disabled = true;
+						document.getElementById("unregisterBtn").disabled =
+							false;
+						document.getElementById("callBtn").disabled = false;
+
+						if (
+							"Notification" in window &&
+							Notification.permission === "default"
+						) {
+							Notification.requestPermission().then(
+								(permission) => {
+									if (permission === "granted") {
+										log(
+											"Desktop notifications enabled for incoming calls",
+										);
+									}
+								},
+							);
+						}
+					});
+
+					userAgent.on("registrationFailed", (response, cause) => {
+						if (
+							response &&
+							response.status_code &&
+							response.reason_phrase
+						) {
+							log(
+								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+							);
+						}
+						log(`Registration failed: ${cause}`);
+						updateStatus("Registration Failed");
+					});
+
+					userAgent.on("unregistered", () => {
+						log("SIP/2.0 200 OK (Unregistered)");
+					});
+
+					userAgent.on("invite", (session) => {
+						const callerInfo =
+							session.remoteIdentity.displayName ||
+							session.remoteIdentity.uri.user;
+						log(`Incoming call from ${callerInfo}`);
+
+						if (
+							"Notification" in window &&
+							Notification.permission === "granted"
+						) {
+							new Notification("VoiceTel RTC Phone", {
+								body: `Incoming call from ${callerInfo}`,
+								icon: "📞",
+								requireInteraction: true,
+							});
+						}
+
+						handleIncomingCall(session);
+					});
+
+					userAgent.start();
+				} catch (error) {
+					log(`Registration failed: ${error.message}`);
+					updateStatus("Registration Failed");
+					console.error(error);
+				}
+			}
+
+			function unregister() {
+				try {
+					if (userAgent) {
+						userAgent.unregister();
+						userAgent.stop();
+					}
+
+					isRegistered = false;
+					registeredUsername = null;
+					updateStatus("Disconnected");
+					log("Unregistered successfully");
+					log("SIP REGISTER (Expires: 0)");
+
+					document.getElementById("registerBtn").disabled = false;
+					document.getElementById("unregisterBtn").disabled = true;
+					document.getElementById("callBtn").disabled = true;
+				} catch (error) {
+					log(`Unregister failed: ${error.message}`);
+					console.error(error);
+				}
+			}
+
+			function makeCall() {
+				let number = document.getElementById("callNumber").value;
+
+				const originalNumber = number;
+				number = number.replace(/\D/g, "");
+
+				if (originalNumber !== number && originalNumber.length > 0) {
+					log(`Sanitized number: "${originalNumber}" → "${number}"`);
+				}
+
+				if (!number) {
+					alert("Please enter a number to call");
+					return;
+				}
+
+				if (!isRegistered || !userAgent) {
+					alert("Please register first");
+					return;
+				}
+
+				if (incomingSession) {
+					alert("Please answer or decline the incoming call first");
+					return;
+				}
+
+				const callerID = document
+					.getElementById("callerID")
+					.value.replace(/\D/g, "");
+				if (callerID && !validateNorthAmericanNumber(callerID)) {
+					alert(
+						"Please enter a valid 10-digit North American phone number for Caller ID",
+					);
+					document.getElementById("callerIDError").style.display =
+						"block";
+					return;
+				}
+
+				try {
+					const displayName =
+						document.getElementById("displayName").value ||
+						registeredUsername;
+					const hideCallerID =
+						document.getElementById("hideCallerID").checked;
+
+					const domain = "tls.voicetel.com";
+					const uri = `sip:${number}@${domain}`;
+
+					const options = {
+						sessionDescriptionHandlerOptions: {
+							constraints: {
+								audio: true,
+								video: false,
+							},
+						},
+					};
+
+					options.extraHeaders = [];
+
+					let pAssertedIdentity;
+
+					if (callerID && validateNorthAmericanNumber(callerID)) {
+						const formattedNumber = "+1" + callerID;
+						pAssertedIdentity = `"${displayName}" <sip:${formattedNumber}@tls.voicetel.com>`;
+						log(
+							`Setting caller ID: ${displayName} ${formattedNumber}`,
+						);
+					} else {
+						pAssertedIdentity = `"${displayName}" <sip:${registeredUsername}@tls.voicetel.com>`;
+						log(
+							`Using default caller ID: ${displayName} ${registeredUsername}`,
+						);
+					}
+
+					options.extraHeaders.push(
+						"P-Asserted-Identity: " + pAssertedIdentity,
+					);
+					options.extraHeaders.push(
+						"P-Preferred-Identity: " + pAssertedIdentity,
+					);
+
+					if (hideCallerID) {
+						options.extraHeaders.push("Privacy: id");
+						log("Caller ID privacy enabled");
+					} else {
+						options.extraHeaders.push("Privacy: none");
+					}
+
+					currentSession = userAgent.invite(uri, options);
+
+					let sessionRingingStarted = false;
+
+					if (currentSession.request) {
+						const callId = currentSession.request.callId;
+
+						const messageHandler = function (e) {
+							if (e && e.data && e.data.includes(callId)) {
+								const lines = e.data.split("\r\n");
+								for (let line of lines) {
+									if (line.startsWith("SIP/2.0")) {
+										log(line);
+										if (
+											!sessionRingingStarted &&
+											(line.includes("180 Ringing") ||
+												line.includes(
+													"183 Session Progress",
+												))
+										) {
+											startRinging();
+											sessionRingingStarted = true;
+										}
+										if (
+											sessionRingingStarted &&
+											line.includes("200 OK")
+										) {
+											stopRinging();
+											sessionRingingStarted = false;
+										}
+										break;
+									}
+								}
+							}
+						};
+
+						if (userAgent.transport && userAgent.transport.ws) {
+							userAgent.transport.ws.addEventListener(
+								"message",
+								messageHandler,
+							);
+
+							currentSession.on("terminated", () => {
+								if (sessionRingingStarted) {
+									stopRinging();
+									sessionRingingStarted = false;
+								}
+								userAgent.transport.ws.removeEventListener(
+									"message",
+									messageHandler,
+								);
+							});
+							currentSession.on("failed", () => {
+								if (sessionRingingStarted) {
+									stopRinging();
+									sessionRingingStarted = false;
+								}
+								userAgent.transport.ws.removeEventListener(
+									"message",
+									messageHandler,
+								);
+							});
+						}
+					}
+
+					setupSessionHandlers(currentSession);
+
+					log(`Calling ${number}...`);
+					log("SIP INVITE sent");
+					showCallControls();
+				} catch (error) {
+					log(`Call failed: ${error.message}`);
+					console.error(error);
+				}
+			}
+
+			function handleIncomingCall(session) {
+				if (currentSession) {
+					log("Auto-rejecting incoming call - already in a call");
+					session.reject();
+					log("SIP/2.0 486 Busy Here");
+					return;
+				}
+
+				incomingSession = session;
+
+				log("SIP INVITE received");
+
+				const callerUri = session.remoteIdentity.uri.user;
+				const callerName =
+					session.remoteIdentity.displayName || "Unknown";
+
+				let formattedNumber = callerUri;
+				if (/^\d{10}$/.test(callerUri)) {
+					formattedNumber = `(${callerUri.slice(0, 3)}) ${callerUri.slice(3, 6)}-${callerUri.slice(6)}`;
+				} else if (/^\+1\d{10}$/.test(callerUri)) {
+					const num = callerUri.slice(2);
+					formattedNumber = `+1 (${num.slice(0, 3)}) ${num.slice(3, 6)}-${num.slice(6)}`;
+				}
+
+				document.getElementById("incomingCallerName").textContent =
+					callerName;
+				document.getElementById("incomingCallerNumber").textContent =
+					formattedNumber;
+
+				document.getElementById("incomingCall").classList.add("active");
+
+				startRinging();
+				log("SIP/2.0 180 Ringing");
+
+				log(`Incoming call from ${callerName} ${formattedNumber}`);
+				log("Press Enter to answer or Escape to decline");
+
+				incomingCallTimeout = setTimeout(() => {
+					if (incomingSession) {
+						log("Auto-declining unanswered call after 30 seconds");
+						declineCall();
+					}
+				}, 30000);
+
+				setupIncomingSessionHandlers(session);
+			}
+
+			function setupIncomingSessionHandlers(session) {
+				session.on("terminated", () => {
+					if (incomingCallTimeout) {
+						clearTimeout(incomingCallTimeout);
+						incomingCallTimeout = null;
+					}
+					hideIncomingCallUI();
+					stopRinging();
+					log("Incoming call ended by caller");
+					incomingSession = null;
+				});
+
+				session.on("failed", () => {
+					if (incomingCallTimeout) {
+						clearTimeout(incomingCallTimeout);
+						incomingCallTimeout = null;
+					}
+					hideIncomingCallUI();
+					stopRinging();
+					log("Incoming call failed");
+					incomingSession = null;
+				});
+
+				session.on("rejected", () => {
+					if (incomingCallTimeout) {
+						clearTimeout(incomingCallTimeout);
+						incomingCallTimeout = null;
+					}
+					hideIncomingCallUI();
+					stopRinging();
+					log("Incoming call was rejected");
+					incomingSession = null;
+				});
+			}
+
+			function answerCall() {
+				if (!incomingSession) {
+					log("No incoming call to answer");
+					return;
+				}
+
+				if (incomingCallTimeout) {
+					clearTimeout(incomingCallTimeout);
+					incomingCallTimeout = null;
+				}
+
+				currentSession = incomingSession;
+				incomingSession = null;
+
+				hideIncomingCallUI();
+
+				setupSessionHandlers(currentSession);
+
+				currentSession.accept();
+
+				stopRinging();
+				showCallControls();
+				log("Call answered");
+				log("SIP/2.0 200 OK");
+			}
+
+			function declineCall() {
+				if (!incomingSession) {
+					log("No incoming call to decline");
+					return;
+				}
+
+				if (incomingCallTimeout) {
+					clearTimeout(incomingCallTimeout);
+					incomingCallTimeout = null;
+				}
+
+				incomingSession.reject();
+				hideIncomingCallUI();
+				stopRinging();
+				log("Call declined");
+				log("SIP/2.0 603 Decline");
+				incomingSession = null;
+			}
+
+			function hideIncomingCallUI() {
+				document
+					.getElementById("incomingCall")
+					.classList.remove("active");
+				document.getElementById("incomingCallerName").textContent =
+					"Incoming Call";
+				document.getElementById("incomingCallerNumber").textContent =
+					"Unknown Number";
+			}
+
+			function setupSessionHandlers(session) {
+				let ringingStarted = false;
+
+				if (session.on) {
+					session.on("response", (response) => {
+						if (
+							response &&
+							response.status_code &&
+							response.reason_phrase
+						) {
+							log(
+								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+							);
+
+							if (
+								!ringingStarted &&
+								(response.status_code === 180 ||
+									response.status_code === 183)
+							) {
+								startRinging();
+								ringingStarted = true;
+							}
+
+							if (response.status_code === 200) {
+								if (ringingStarted) {
+									stopRinging();
+									ringingStarted = false;
+								}
+							}
+						}
+					});
+				}
+
+				session.on("progress", (response) => {
+					if (
+						response &&
+						response.status_code &&
+						response.reason_phrase
+					) {
+						if (!session.on || !session.on.response) {
+							log(
+								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+							);
+						}
+
+						if (
+							!ringingStarted &&
+							(response.status_code === 180 ||
+								response.status_code === 183)
+						) {
+							startRinging();
+							ringingStarted = true;
+						}
+					}
+				});
+
+				session.on("terminated", (message, cause) => {
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
+					log("Call ended" + (cause ? ": " + cause : ""));
+					endCall();
+				});
+
+				session.on("failed", (response, cause) => {
+					if (
+						response &&
+						response.status_code &&
+						response.reason_phrase
+					) {
+						log(
+							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+						);
+					}
+
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
+
+					if (
+						cause &&
+						cause.includes("SESSION_DESCRIPTION_HANDLER_ERROR")
+					) {
+						log(
+							"⚠️ Media negotiation failed - incompatible media format",
+						);
+						log(
+							"Server sent RTP/AVP (non-secure) but browser requires DTLS-SRTP",
+						);
+						log(
+							'Missing required "fingerprint" attribute in server SDP',
+						);
+						alert(
+							"Call failed: Media format incompatibility.\n\nTechnical details:\n- VoiceTel (tls.voicetel.com) sent non-secure RTP (RTP/AVP)\n- Browser requires secure media (DTLS-SRTP)\n- Missing fingerprint attribute for DTLS\n\nSolution:\nContact VoiceTel support and request:\n1. Enable WebRTC support on tls.voicetel.com\n2. Configure DTLS-SRTP for secure media\n3. Use a WebRTC-compatible media gateway",
+						);
+					} else {
+						log("Call failed: " + (cause || "Unknown error"));
+					}
+					endCall();
+				});
+
+				session.on("rejected", (response, cause) => {
+					if (
+						response &&
+						response.status_code &&
+						response.reason_phrase
+					) {
+						log(
+							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+						);
+					}
+					log("Call rejected" + (cause ? ": " + cause : ""));
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
+					endCall();
+				});
+
+				session.on("bye", (request) => {
+					log("SIP BYE received");
+					log("Call ended by remote");
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
+					endCall();
+				});
+
+				session.on("accepted", (response) => {
+					if (
+						response &&
+						response.status_code &&
+						response.reason_phrase
+					) {
+						log(
+							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+						);
+					}
+
+					if (ringingStarted) {
+						stopRinging();
+						ringingStarted = false;
+					}
+
+					log("Call connected");
+
+					if (
+						currentSession &&
+						currentSession.sessionDescriptionHandler &&
+						currentSession.sessionDescriptionHandler.peerConnection
+					) {
+						const pc =
+							currentSession.sessionDescriptionHandler
+								.peerConnection;
+						const remoteDesc = pc.remoteDescription;
+						if (remoteDesc && remoteDesc.sdp) {
+							if (remoteDesc.sdp.includes("telephone-event")) {
+								log("Remote supports RFC 2833 telephone-event");
+							} else {
+								log(
+									"⚠️ Remote does NOT support telephone-event - will use SIP INFO for DTMF",
+								);
+							}
+						}
+					}
+
+					document.getElementById("callNumber").value = "";
+					document.getElementById("callNumber").placeholder =
+						"Type or press dialpad for DTMF";
+					document.getElementById("callNumber").focus();
+
+					startCallTimer();
+
+					try {
+						const pc =
+							session.sessionDescriptionHandler.peerConnection;
+						const remoteStream = new MediaStream();
+						pc.getReceivers().forEach((receiver) => {
+							if (receiver.track) {
+								remoteStream.addTrack(receiver.track);
+							}
+						});
+
+						const remoteAudio =
+							document.getElementById("remoteAudio");
+						remoteAudio.srcObject = remoteStream;
+					} catch (e) {
+						log("Error setting up audio: " + e.message);
+					}
+				});
+
+				session.on("referRequestRejected", (response) => {
+					if (
+						response &&
+						response.status_code &&
+						response.reason_phrase
+					) {
+						log(
+							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+						);
+					}
+				});
+
+				session.on("trackAdded", () => {
+					try {
+						const pc =
+							session.sessionDescriptionHandler.peerConnection;
+						const remoteStream = new MediaStream();
+						pc.getReceivers().forEach((receiver) => {
+							if (receiver.track) {
+								remoteStream.addTrack(receiver.track);
+							}
+						});
+
+						const remoteAudio =
+							document.getElementById("remoteAudio");
+						remoteAudio.srcObject = remoteStream;
+					} catch (e) {
+						log("Error handling track: " + e.message);
+					}
+				});
+			}
+
+			function hangup() {
+				stopRinging();
+				if (currentSession) {
+					if (currentSession.hasAnswer) {
+						currentSession.bye();
+						log("SIP BYE sent");
+					} else {
+						currentSession.cancel();
+						log("SIP CANCEL sent");
+					}
+					log("Hanging up...");
+				}
+			}
+
+			function toggleMute() {
+				if (
+					!currentSession ||
+					!currentSession.sessionDescriptionHandler
+				)
+					return;
+
+				const pc =
+					currentSession.sessionDescriptionHandler.peerConnection;
+				const senders = pc.getSenders();
+
+				senders.forEach((sender) => {
+					if (sender.track && sender.track.kind === "audio") {
+						sender.track.enabled = isMuted;
+					}
+				});
+
+				isMuted = !isMuted;
+				document.getElementById("muteBtn").textContent = isMuted
+					? "Unmute"
+					: "Mute";
+				log(isMuted ? "Muted" : "Unmuted");
+			}
+
+			function showCallControls() {
+				document.getElementById("callControls").classList.add("active");
+				document.getElementById("callBtn").disabled = true;
+			}
+
+			function hideCallControls() {
+				document
+					.getElementById("callControls")
+					.classList.remove("active");
+				document.getElementById("callBtn").disabled = false;
+				stopCallTimer();
+			}
+
+			function endCall() {
+				currentSession = null;
+				hideCallControls();
+				stopRinging();
+				isMuted = false;
+				document.getElementById("muteBtn").textContent = "Mute";
+				document.getElementById("callStatus").textContent =
+					"Call in progress";
+
+				document.getElementById("callNumber").placeholder =
+					"Enter number (any format - will be cleaned)";
+			}
+
+			function startCallTimer() {
+				callStartTime = Date.now();
+				callTimer = setInterval(updateCallDuration, 1000);
+			}
+
+			function stopCallTimer() {
+				if (callTimer) {
+					clearInterval(callTimer);
+					callTimer = null;
+				}
+				document.getElementById("callDuration").textContent = "00:00";
+			}
+
+			function updateCallDuration() {
+				if (!callStartTime) return;
+
+				const duration = Math.floor(
+					(Date.now() - callStartTime) / 1000,
+				);
+				const minutes = Math.floor(duration / 60);
+				const seconds = duration % 60;
+
+				document.getElementById("callDuration").textContent =
+					`${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+			}
+
+			function appendNumber(num) {
+				const input = document.getElementById("callNumber");
+
+				if (currentSession) {
+					const isEstablished =
+						currentSession.dialog ||
+						(currentSession.sessionDescriptionHandler &&
+							currentSession.sessionDescriptionHandler
+								.peerConnection);
+
+					if (isEstablished) {
+						if (sendDTMF(num)) {
+							input.value = input.value + num;
+						}
+						return;
+					}
+				}
+
+				input.value = input.value + num;
+			}
+
+			function clearNumber() {
+				document.getElementById("callNumber").value = "";
+			}
+
+			function sendDTMF(digit) {
+				if (!currentSession) {
+					log("No active session for DTMF");
+					return false;
+				}
+
+				const isEstablished =
+					currentSession.dialog ||
+					(currentSession.sessionDescriptionHandler &&
+						currentSession.sessionDescriptionHandler
+							.peerConnection);
+
+				if (!isEstablished) {
+					log("Call not fully established for DTMF");
+					return false;
+				}
+
+				try {
+					const options = {
+						duration: 250,
+						interToneGap: 100,
+					};
+
+					currentSession.dtmf(digit, options);
+					log(`DTMF sent: ${digit} (250ms duration)`);
+
+					return true;
+				} catch (error) {
+					log(`DTMF failed: ${error.message}`);
+					console.error("DTMF error:", error);
+					return false;
+				}
+			}
+
+			window.addEventListener("beforeunload", () => {
+				stopRinging();
+				if (incomingCallTimeout) {
+					clearTimeout(incomingCallTimeout);
+				}
+				if (incomingSession) {
+					try {
+						incomingSession.reject();
+					} catch (e) {
+					}
+				}
+				if (currentSession) {
+					try {
+						currentSession.bye();
+					} catch (e) {
+					}
+				}
+				if (userAgent) {
+					userAgent.stop();
+				}
+			});
+		</script>
+	</body>
+</html>

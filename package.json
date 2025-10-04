@@ -1,0 +1,138 @@
+{
+	"name": "voicetel-phone",
+	"version": "3.4.0",
+	"description": "VoiceTel WebRTC SIP Phone",
+	"main": "main.js",
+	"scripts": {
+		"start": "ELECTRON_DISABLE_SANDBOX=1 electron .",
+		"build": "electron-builder",
+		"build:mac": "electron-builder --mac",
+		"build:win": "electron-builder --win",
+		"build:linux": "electron-builder --linux",
+		"build:all": "electron-builder -mwl"
+	},
+	"build": {
+		"appId": "com.voicetel.phone",
+		"productName": "VoiceTel",
+		"directories": {
+			"buildResources": "build",
+			"output": "dist"
+		},
+		"mac": {
+			"category": "public.app-category.utilities",
+			"icon": "build/icon.icns",
+			"target": [
+				{
+					"target": "dmg",
+					"arch": [
+						"x64",
+						"arm64"
+					]
+				},
+				{
+					"target": "zip",
+					"arch": [
+						"x64",
+						"arm64"
+					]
+				}
+			],
+			"darkModeSupport": true
+		},
+		"dmg": {
+			"title": "${productName} ${version}",
+			"icon": "build/icon.icns"
+		},
+		"win": {
+			"icon": "build/icon.ico",
+			"target": [
+				{
+					"target": "nsis",
+					"arch": [
+						"x64",
+						"ia32"
+					]
+				},
+				{
+					"target": "portable",
+					"arch": [
+						"x64"
+					]
+				}
+			]
+		},
+		"nsis": {
+			"oneClick": false,
+			"allowToChangeInstallationDirectory": true,
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true,
+			"shortcutName": "VoiceTel"
+		},
+		"linux": {
+			"icon": "build/icons",
+			"target": [
+				{
+					"target": "AppImage",
+					"arch": [
+						"x64"
+					]
+				},
+				{
+					"target": "deb",
+					"arch": [
+						"x64"
+					]
+				}
+			],
+			"category": "Network",
+			"desktop": {
+				"Name": "VoiceTel",
+				"Comment": "VoiceTel WebRTC SIP Phone",
+				"Categories": "Network;Telephony;"
+			}
+		},
+		"files": [
+			"main.js",
+			"index.html",
+			"build/**/*"
+		],
+		"extraResources": [
+			{
+				"from": "build/icons/icon.png",
+				"to": "icon.png"
+			},
+			{
+				"from": "build/icons/icon.ico",
+				"to": "icon.ico",
+				"filter": [
+					"**/*"
+				]
+			},
+			{
+				"from": "build/icons/icon.icns",
+				"to": "icon.icns",
+				"filter": [
+					"**/*"
+				]
+			}
+		]
+	},
+	"keywords": [
+		"voip",
+		"sip",
+		"webrtc",
+		"phone"
+	],
+	"author": {
+		"name": "VoiceTel",
+		"email": "support@voicetel.com",
+		"url": "http://www.voicetel.com"
+	},
+	"homepage": "https://github.com/voicetel/voicetel-phone",
+	"license": "MIT",
+	"devDependencies": {
+		"electron": "^38.2.1",
+		"electron-builder": "^24.9.1",
+		"electron-icon-builder": "^2.0.1"
+	}
+}
