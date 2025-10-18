@@ -1,7 +1,7 @@
 {
 	"name": "voicetel-phone",
-	"version": "3.5.0",
-	"description": "VoiceTel WebRTC SIP Phone",
+	"version": "3.5.2",
+	"description": "VoiceTel Phone",
 	"main": "main.js",
 	"scripts": {
 		"start": "electron .",
