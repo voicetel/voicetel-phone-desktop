@@ -1,10 +1,13 @@
 {
 	"name": "voicetel-phone",
-	"version": "3.4.0",
+	"version": "3.5.0",
 	"description": "VoiceTel WebRTC SIP Phone",
 	"main": "main.js",
 	"scripts": {
-		"start": "ELECTRON_DISABLE_SANDBOX=1 electron .",
+		"start": "electron .",
+		"start:nosandbox": "ELECTRON_DISABLE_SANDBOX=1 electron .",
+		"start:debug": "ELECTRON_ENABLE_LOGGING=1 electron .",
+		"start:nosandbox-debug": "ELECTRON_DISABLE_SANDBOX=1 ELECTRON_ENABLE_LOGGING=1 electron .",
 		"build": "electron-builder",
 		"build:mac": "electron-builder --mac",
 		"build:win": "electron-builder --win",
@@ -37,7 +40,11 @@
 					]
 				}
 			],
-			"darkModeSupport": true
+			"darkModeSupport": true,
+			"hardenedRuntime": true,
+			"gatekeeperAssess": false,
+			"entitlements": "build/entitlements.mac.plist",
+			"entitlementsInherit": "build/entitlements.mac.plist"
 		},
 		"dmg": {
 			"title": "${productName} ${version}",

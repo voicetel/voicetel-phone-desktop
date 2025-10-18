@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>VoiceTel Phone</title>
+		<title>VoiceTel Phone v3.5</title>
 		<style>
 			* {
 				margin: 0;
@@ -101,7 +101,9 @@
 			.section.config-section {
 				max-height: 0;
 				overflow: hidden;
-				transition: max-height 0.4s ease-out, margin-bottom 0.4s ease-out;
+				transition:
+					max-height 0.4s ease-out,
+					margin-bottom 0.4s ease-out;
 				margin-bottom: 0;
 			}
 
@@ -113,13 +115,56 @@
 			.section.log-section {
 				max-height: 0;
 				overflow: hidden;
-				transition: max-height 0.4s ease-out, margin-bottom 0.4s ease-out;
+				transition:
+					max-height 0.4s ease-out,
+					margin-bottom 0.4s ease-out;
 				margin-bottom: 0;
 			}
 
 			.section.log-section.visible {
 				max-height: 800px;
 				margin-bottom: 25px;
+			}
+
+			#historySection.visible {
+				margin-bottom: 25px;
+			}
+
+			#historySection .log {
+				padding: 20px;
+				max-height: 260px;
+				border-radius: 12px;
+			}
+
+			#historySection .log-entry {
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+				gap: 12px;
+				padding: 10px 12px;
+				margin-bottom: 8px;
+				background: #fff;
+				border-radius: 8px;
+			}
+
+			#historySection .log-entry strong {
+				font-weight: 700;
+				color: #333;
+			}
+
+			#historySection .log-entry small {
+				color: #999;
+			}
+
+			#historySection .log-entry em {
+				font-style: normal;
+				opacity: 0.8;
+			}
+
+			#historySection .history-actions {
+				display: flex;
+				gap: 10px;
+				margin-top: 12px;
 			}
 
 			.section.hideable {
@@ -360,17 +405,36 @@
 		<div class="container">
 			<div class="header">
 				<div class="header-buttons">
-					<button class="header-toggle active" onclick="showPhone()" title="Phone">
+					<button
+						class="header-toggle active"
+						onclick="showPhone()"
+						title="Phone"
+					>
 						📞
 					</button>
-					<button class="header-toggle" onclick="showLog()" title="Event Log">
+					<button
+						class="header-toggle"
+						onclick="showHistory()"
+						title="Call History"
+					>
+						📜
+					</button>
+					<button
+						class="header-toggle"
+						onclick="showLog()"
+						title="Event Log"
+					>
 						📋
 					</button>
-					<button class="header-toggle" onclick="showSettings()" title="Settings">
+					<button
+						class="header-toggle"
+						onclick="showSettings()"
+						title="Settings"
+					>
 						⚙️
 					</button>
 				</div>
-				<h1>🎤 VoiceTel Phone</h1>
+				<h1>VoiceTel</h1>
 				<div id="status" class="status">Disconnected</div>
 			</div>
 
@@ -402,18 +466,19 @@
 						id="sipServer"
 						value="wss://tls.voicetel.com:443"
 					/>
+
 					<div class="form-group">
-						<label
-							>Username
+						<label>
+							Username
 							<small style="color: #999"
 								>Must be exactly 10 digits (your phone
 								number)</small
-							></label
-						>
+							>
+						</label>
 						<input
 							type="tel"
 							id="username"
-							placeholder="e.g. 5551234567 or (555) 123-4567"
+							placeholder="e.g. 5551234567"
 							maxlength="10"
 							pattern="[0-9]{10}"
 							required
@@ -426,9 +491,11 @@
 								display: none;
 								margin-top: 5px;
 							"
-							>Username must be exactly 10 numeric digits</small
 						>
+							Username must be exactly 10 numeric digits
+						</small>
 					</div>
+
 					<div class="form-group">
 						<label>Password</label>
 						<input
@@ -437,6 +504,7 @@
 							placeholder="password"
 						/>
 					</div>
+
 					<div class="form-group">
 						<label>Display Name</label>
 						<input
@@ -445,15 +513,16 @@
 							placeholder="Your Name"
 						/>
 					</div>
+
 					<div class="form-group">
-						<label
-							>Caller ID Number
+						<label>
+							Caller ID Number
 							<small style="color: #999"
 								>Optional - North American format only (10
 								digits). Will be combined with Display Name for
 								outbound caller ID.</small
-							></label
-						>
+							>
+						</label>
 						<input
 							type="tel"
 							id="callerID"
@@ -469,10 +538,12 @@
 								display: none;
 								margin-top: 5px;
 							"
-							>Please enter a valid 10-digit North American phone
-							number</small
 						>
+							Please enter a valid 10-digit North American phone
+							number
+						</small>
 					</div>
+
 					<div
 						class="form-group"
 						style="
@@ -496,27 +567,62 @@
 								id="saveCredentials"
 								style="width: auto; margin-right: 8px"
 							/>
-							Save credentials securely (device fingerprint
-							encryption)
+							Save credentials securely
 						</label>
 						<small
 							style="color: #999; display: block; margin-top: 8px"
 						>
-							⚠️ Security Notice: Credentials are encrypted using
-							a unique fingerprint of your device/browser and
-							stored in cookies for 30 days. No external services
-							are contacted. Cookies are set with Secure and
-							SameSite=Strict flags. Only enable on trusted
-							personal devices.
+							🔒 Credentials are encrypted locally with AES‑GCM (WebCrypto) and saved on this device only.</small>
+
+						<label
+							style="
+								display: flex;
+								align-items: center;
+								cursor: pointer;
+								color: #667eea;
+								font-weight: 600;
+								margin-top: 20px;
+							"
+						>
+							<input
+								type="checkbox"
+								id="saveConfigApp"
+								style="width: auto; margin-right: 8px"
+							/>
+							Save SIP configuration in app storage
+						</label>
+						<small
+							style="color: #999; display: block; margin-top: 8px"
+						>
+							Stores your SIP settings alongside Call History
+							using the same local app storage. Passwords are
+							encrypted with your device fingerprint key.
 						</small>
+
+						<label
+							class="checkbox-row"
+							style="
+								display: flex;
+								align-items: center;
+								cursor: pointer;
+								color: #667eea;
+								font-weight: 600;
+								margin-top: 20px;
+							"
+						>
+							<input type="checkbox" id="registerOnStartup" />
+							<span>Register automatically on startup</span>
+						</label>
+
 						<div
 							id="encryptionInfo"
 							class="encryption-info"
 							style="display: none"
 						></div>
+
 						<button
 							class="btn-secondary"
-							onclick="CookieStore.clearAll()"
+							onclick="clearAllSaved()"
 							style="
 								margin-top: 10px;
 								padding: 8px 16px;
@@ -529,9 +635,6 @@
 				</div>
 
 				<div class="section hideable" id="callSection">
-					<h2>Make a Call / Send DTMF</h2>
-
-					<!-- Incoming Call UI -->
 					<div id="incomingCall" class="incoming-call">
 						<div
 							style="
@@ -656,6 +759,7 @@
 				<div class="section log-section" id="logSection">
 					<h2>Event Log</h2>
 					<div id="log" class="log"></div>
+
 					<div
 						style="
 							text-align: center;
@@ -667,6 +771,7 @@
 						WebSocket: wss://tls.voicetel.com:443 | SIP Domain:
 						tls.voicetel.com
 					</div>
+
 					<details
 						style="
 							margin-top: 15px;
@@ -692,46 +797,14 @@
 								line-height: 1.6;
 							"
 						>
-							<p><strong>Media Negotiation Errors:</strong></p>
-							<p>
-								If you see "fingerprint attribute" errors or
-								calls fail immediately after connecting, the
-								VoiceTel media gateway may not be configured for
-								WebRTC. The server appears to be sending
-								non-secure RTP (RTP/AVP) while browsers require
-								secure media (DTLS-SRTP).
-							</p>
-							<p style="margin-top: 10px">
-								<strong>To resolve this issue:</strong>
-							</p>
-							<ul style="margin-left: 20px">
-								<li>
-									Contact VoiceTel support to enable
-									WebRTC/DTLS-SRTP on tls.voicetel.com
-								</li>
-								<li>
-									Request they configure secure RTP
-									(SAVP/SAVPF) for WebRTC endpoints
-								</li>
-								<li>
-									Verify your account is authorized for the
-									tls.voicetel.com domain
-								</li>
-								<li>
-									Ask about WebRTC-specific server endpoints
-									if available
-								</li>
-							</ul>
-							<p style="margin-top: 10px">
-								<strong>Other Common Issues:</strong>
-							</p>
 							<ul style="margin-left: 20px">
 								<li>
 									Ensure microphone permissions are granted
 								</li>
 								<li>
 									Try using Chrome or Firefox (latest
-									versions)
+									versions) or if using an application run it
+									in in --no-sandbox mode.
 								</li>
 								<li>
 									Check that your firewall allows WebRTC
@@ -739,8 +812,36 @@
 								</li>
 								<li>Disable VPN if you're using one</li>
 							</ul>
+							<p style="margin-top: 10px">
+								<strong>
+									Need assistance? Contact the
+									<a href="mailto:support@voicetel.com"
+										>VoiceTel Support Team</a
+									>
+									for help.
+								</strong>
+							</p>
 						</div>
 					</details>
+				</div>
+
+				<div class="section log-section" id="historySection">
+					<h2>Call History</h2>
+					<div id="callHistory" class="log"></div>
+					<div
+						class="history-actions"
+						style="display: flex; gap: 10px; margin-top: 12px"
+					>
+						<button class="btn-secondary" onclick="clearHistory()">
+							Clear History
+						</button>
+						<button
+							class="btn-secondary"
+							onclick="renderCallHistory()"
+						>
+							Refresh
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -750,446 +851,25 @@
 			</div>
 		</div>
 
-		<!-- Load SIP.js library -->
 		<script src="https://cdn.jsdelivr.net/npm/sip.js@0.15.11/dist/sip.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
 		<script>
-			// Show phone interface
-			function showPhone() {
-				const configSection = document.getElementById('configSection');
-				const registerSection = document.getElementById('registerSection');
-				const callSection = document.getElementById('callSection');
-				const logSection = document.getElementById('logSection');
-				const buttons = document.querySelectorAll('.header-toggle');
-				
-				// Show phone sections
-				registerSection.classList.remove('hidden');
-				callSection.classList.remove('hidden');
-				
-				// Hide other sections
-				configSection.classList.remove('visible');
-				logSection.classList.remove('visible');
-				
-				// Update button states
-				buttons[0].classList.add('active');
-				buttons[1].classList.remove('active');
-				buttons[2].classList.remove('active');
-			}
+			// Constants
+			const INCOMING_CALL_TIMEOUT_MS = 30000;
+			const DTMF_DURATION_MS = 250;
+			const DTMF_INTERTONE_GAP_MS = 100;
+			const SIP_REGISTRATION_EXPIRES_SEC = 300;
+			const COOKIE_EXPIRY_DAYS = 30;
+			const USERNAME_LENGTH = 10;
 
-			// Show log
-			function showLog() {
-				const configSection = document.getElementById('configSection');
-				const registerSection = document.getElementById('registerSection');
-				const callSection = document.getElementById('callSection');
-				const logSection = document.getElementById('logSection');
-				const buttons = document.querySelectorAll('.header-toggle');
-				
-				// Show log section
-				logSection.classList.add('visible');
-				
-				// Hide other sections
-				registerSection.classList.add('hidden');
-				callSection.classList.add('hidden');
-				configSection.classList.remove('visible');
-				
-				// Update button states
-				buttons[0].classList.remove('active');
-				buttons[1].classList.add('active');
-				buttons[2].classList.remove('active');
-			}
+			// Username validation function
+			function isValidUsername(username) {
+				return username && /^\d{10}$/.test(username) && username.length === USERNAME_LENGTH;
+			
 
-			// Show settings
-			function showSettings() {
-				const configSection = document.getElementById('configSection');
-				const registerSection = document.getElementById('registerSection');
-				const callSection = document.getElementById('callSection');
-				const logSection = document.getElementById('logSection');
-				const buttons = document.querySelectorAll('.header-toggle');
-				
-				// Show settings section
-				configSection.classList.add('visible');
-				
-				// Hide other sections
-				registerSection.classList.add('hidden');
-				callSection.classList.add('hidden');
-				logSection.classList.remove('visible');
-				
-				// Update button states
-				buttons[0].classList.remove('active');
-				buttons[1].classList.remove('active');
-				buttons[2].classList.add('active');
-			}
+}
 
 			// Cookie storage implementation with browser fingerprint-based encryption
-			const CookieStore = {
-				deviceFingerprint: null,
-				hashedKey: null,
-
-				hashString: function (str) {
-					let hash = 2166136261;
-					for (let i = 0; i < str.length; i++) {
-						hash ^= str.charCodeAt(i);
-						hash = Math.imul(hash, 16777619);
-					}
-					let hexHash = (hash >>> 0).toString(16);
-
-					let complexKey = hexHash;
-					let tempStr = str + hexHash;
-					for (let j = 0; j < 3; j++) {
-						hash = 2166136261;
-						for (let i = 0; i < tempStr.length; i++) {
-							hash ^= tempStr.charCodeAt(i);
-							hash = Math.imul(hash, 16777619);
-						}
-						hexHash = (hash >>> 0).toString(16);
-						complexKey += hexHash;
-						tempStr = tempStr + hexHash;
-					}
-
-					return complexKey;
-				},
-
-				generateDeviceFingerprint: function () {
-					const fingerprint = [];
-
-					fingerprint.push(navigator.userAgent);
-					fingerprint.push(
-						navigator.language || navigator.userLanguage,
-					);
-					fingerprint.push((navigator.languages || []).join(","));
-					fingerprint.push(
-						navigator.hardwareConcurrency || "unknown",
-					);
-					fingerprint.push(screen.width + "x" + screen.height);
-					fingerprint.push(screen.colorDepth);
-					fingerprint.push(screen.pixelDepth);
-					fingerprint.push(
-						Intl.DateTimeFormat().resolvedOptions().timeZone,
-					);
-					fingerprint.push(new Date().getTimezoneOffset());
-					fingerprint.push(navigator.platform);
-
-					if (navigator.deviceMemory) {
-						fingerprint.push(navigator.deviceMemory);
-					}
-
-					if (navigator.connection) {
-						fingerprint.push(navigator.connection.effectiveType);
-					}
-
-					try {
-						const canvas = document.createElement("canvas");
-						const ctx = canvas.getContext("2d");
-						ctx.textBaseline = "top";
-						ctx.font = "14px Arial";
-						ctx.fillStyle = "#f60";
-						ctx.fillRect(125, 1, 62, 20);
-						ctx.fillStyle = "#069";
-						ctx.fillText("VoiceTel RTC", 2, 15);
-						ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-						ctx.fillText("VoiceTel RTC", 4, 17);
-						fingerprint.push(canvas.toDataURL());
-					} catch (e) {
-						fingerprint.push("canvas-error");
-					}
-
-					try {
-						const canvas = document.createElement("canvas");
-						const gl =
-							canvas.getContext("webgl") ||
-							canvas.getContext("experimental-webgl");
-						if (gl) {
-							const debugInfo = gl.getExtension(
-								"WEBGL_debug_renderer_info",
-							);
-							if (debugInfo) {
-								fingerprint.push(
-									gl.getParameter(
-										debugInfo.UNMASKED_VENDOR_WEBGL,
-									),
-								);
-								fingerprint.push(
-									gl.getParameter(
-										debugInfo.UNMASKED_RENDERER_WEBGL,
-									),
-								);
-							}
-						}
-					} catch (e) {
-						fingerprint.push("webgl-error");
-					}
-
-					return fingerprint.join("|||");
-				},
-
-				initializeFingerprint: function () {
-					this.deviceFingerprint = this.generateDeviceFingerprint();
-					this.hashedKey = this.hashString(
-						this.deviceFingerprint + "_voicetel_salt",
-					);
-					this.displayEncryptionInfo();
-					log("Encryption key initialized using device fingerprint");
-					return this.deviceFingerprint;
-				},
-
-				displayEncryptionInfo: function () {
-					const infoEl = document.getElementById("encryptionInfo");
-					if (infoEl) {
-						const hashPreview = this.hashedKey
-							? this.hashedKey.substring(0, 8)
-							: "";
-						const fingerprintPreview = this.deviceFingerprint
-							? this.hashString(this.deviceFingerprint).substring(
-									0,
-									6,
-								)
-							: "";
-						infoEl.innerHTML = `🔒 Encryption: Device fingerprint [${fingerprintPreview}...] Key: [${hashPreview}...]`;
-						infoEl.style.display = "block";
-					}
-				},
-
-				getEncryptionKey: function () {
-					if (!this.hashedKey) {
-						this.initializeFingerprint();
-					}
-					return (
-						this.hashedKey || this.hashString("default_key_salt")
-					);
-				},
-
-				encrypt: function (text) {
-					if (!text) return "";
-					const key = this.getEncryptionKey();
-					let encrypted = "";
-					for (let i = 0; i < text.length; i++) {
-						encrypted += String.fromCharCode(
-							text.charCodeAt(i) ^ key.charCodeAt(i % key.length),
-						);
-					}
-					return btoa(encrypted);
-				},
-
-				decrypt: function (text) {
-					if (!text) return "";
-					const key = this.getEncryptionKey();
-					try {
-						let decrypted = atob(text);
-						let result = "";
-						for (let i = 0; i < decrypted.length; i++) {
-							result += String.fromCharCode(
-								decrypted.charCodeAt(i) ^
-									key.charCodeAt(i % key.length),
-							);
-						}
-						return result;
-					} catch (e) {
-						console.error("Decryption failed:", e);
-						return "";
-					}
-				},
-
-				setCookie: function (name, value, days = 30) {
-					const date = new Date();
-					date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-					const expires = "; expires=" + date.toUTCString();
-					const secure =
-						location.protocol === "https:" ? "; Secure" : "";
-					const sameSite = "; SameSite=Strict";
-					document.cookie =
-						name +
-						"=" +
-						(value || "") +
-						expires +
-						"; path=/" +
-						secure +
-						sameSite;
-				},
-
-				getCookie: function (name) {
-					const nameEQ = name + "=";
-					const ca = document.cookie.split(";");
-					for (let i = 0; i < ca.length; i++) {
-						let c = ca[i];
-						while (c.charAt(0) === " ")
-							c = c.substring(1, c.length);
-						if (c.indexOf(nameEQ) === 0)
-							return c.substring(nameEQ.length, c.length);
-					}
-					return null;
-				},
-
-				deleteCookie: function (name) {
-					document.cookie =
-						name +
-						"=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-				},
-
-				saveCredentials: function () {
-					const consent = document.getElementById("saveCredentials");
-					if (!consent || !consent.checked) {
-						this.deleteCookie("sip_username");
-						this.deleteCookie("sip_password");
-						this.deleteCookie("sip_displayname");
-						this.deleteCookie("sip_callerid");
-						this.deleteCookie("sip_key_validator");
-						return;
-					}
-
-					const username = document.getElementById("username").value;
-					const password = document.getElementById("password").value;
-					const displayName =
-						document.getElementById("displayName").value;
-					const callerID = document.getElementById("callerID").value;
-
-					if (username && !/^\d{10}$/.test(username)) {
-						log(
-							"⚠️ Cannot save credentials - username must be exactly 10 numeric digits",
-						);
-						return;
-					}
-
-					this.getEncryptionKey();
-
-					if (username)
-						this.setCookie(
-							"sip_username",
-							this.encrypt(username),
-							30,
-						);
-					if (password)
-						this.setCookie(
-							"sip_password",
-							this.encrypt(password),
-							30,
-						);
-					if (displayName)
-						this.setCookie("sip_displayname", displayName, 30);
-					if (callerID) this.setCookie("sip_callerid", callerID, 30);
-
-					if (this.hashedKey) {
-						const validator = this.hashedKey.substring(0, 16);
-						this.setCookie("sip_key_validator", validator, 30);
-					}
-
-					log("Credentials saved with device fingerprint encryption");
-				},
-
-				loadCredentials: function () {
-					this.initializeFingerprint();
-
-					const savedValidator = this.getCookie("sip_key_validator");
-					const currentValidator = this.hashedKey
-						? this.hashedKey.substring(0, 16)
-						: null;
-
-					if (
-						savedValidator &&
-						currentValidator &&
-						savedValidator !== currentValidator
-					) {
-						log(
-							"⚠️ Device fingerprint changed - cannot decrypt saved credentials",
-						);
-						log(
-							"This can happen if browser, hardware, or settings changed",
-						);
-						this.clearAll();
-						return;
-					}
-
-					const savedUsername = this.getCookie("sip_username");
-					const savedPassword = this.getCookie("sip_password");
-					const savedDisplayName = this.getCookie("sip_displayname");
-					const savedCallerID = this.getCookie("sip_callerid");
-
-					if (savedUsername) {
-						try {
-							const decryptedUsername =
-								this.decrypt(savedUsername);
-
-							if (
-								!decryptedUsername ||
-								!/^\d{10}$/.test(decryptedUsername) ||
-								decryptedUsername.length !== 10
-							) {
-								log(
-									"⚠️ Invalid or corrupted credentials detected - clearing stored data",
-								);
-								log(
-									"Username validation failed: must be exactly 10 numeric digits",
-								);
-								this.clearAll();
-								return;
-							}
-
-							document.getElementById("username").value =
-								decryptedUsername;
-							document.getElementById("saveCredentials").checked =
-								true;
-
-							if (savedPassword) {
-								try {
-									document.getElementById("password").value =
-										this.decrypt(savedPassword);
-								} catch (e) {
-									console.error(
-										"Failed to decrypt password:",
-										e,
-									);
-									log(
-										"⚠️ Password decryption failed - clearing all credentials",
-									);
-									this.clearAll();
-									return;
-								}
-							}
-
-							if (savedDisplayName) {
-								document.getElementById("displayName").value =
-									savedDisplayName;
-							}
-							if (savedCallerID) {
-								document.getElementById("callerID").value =
-									savedCallerID;
-							}
-
-							log(
-								"Credentials loaded from device-encrypted storage",
-							);
-							log(
-								`Loaded username: ${decryptedUsername.substring(0, 3)}*******`,
-							);
-						} catch (e) {
-							console.error("Failed to decrypt username:", e);
-							log(
-								"⚠️ Credential decryption failed - clearing stored data",
-							);
-							this.clearAll();
-							return;
-						}
-					} else if (
-						savedPassword ||
-						savedDisplayName ||
-						savedCallerID
-					) {
-						log(
-							"⚠️ Incomplete credentials detected - clearing stored data",
-						);
-						this.clearAll();
-					}
-				},
-
-				clearAll: function () {
-					this.deleteCookie("sip_username");
-					this.deleteCookie("sip_password");
-					this.deleteCookie("sip_displayname");
-					this.deleteCookie("sip_callerid");
-					this.deleteCookie("sip_key_validator");
-					document.getElementById("saveCredentials").checked = false;
-					log("All stored credentials cleared");
-				},
-			};
-
 			// Wait for DOM and library to load
 			window.addEventListener("DOMContentLoaded", function () {
 				if (typeof SIP === "undefined") {
@@ -1202,7 +882,7 @@
 					);
 				} else {
 					console.log("SIP.js version:", SIP.version || "unknown");
-					log("VoiceTel RTC Phone v3.2 ready");
+					log("VoiceTel RTC Phone v3.5 ready");
 					log("Smart DTMF with automatic RFC 2833/SIP INFO fallback");
 					log("SIP.js " + (SIP.version || "0.15.x") + " loaded");
 					log("Server: tls.voicetel.com (wss://443)");
@@ -1211,42 +891,41 @@
 					);
 				}
 
-				CookieStore.loadCredentials();
+				SecureStore.loadCredentials();
 
-				// Both sections start hidden by default
+				// Global keyboard shortcuts for incoming calls (register once)
+				document.addEventListener("keydown", function (e) {
+					if (incomingSession) {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							answerCall();
+						} else if (e.key === "Escape") {
+							e.preventDefault();
+							declineCall();
+						}
+					}
+				});
 
 				document
 					.getElementById("username")
 					.addEventListener("input", function (e) {
 						const value = e.target.value.replace(/\D/g, "");
-						e.target.value = value.substring(0, 10);
+						e.target.value = value.substring(0, USERNAME_LENGTH);
 
 						const errorEl =
 							document.getElementById("usernameError");
-						if (value && value.length !== 10) {
+						if (value && value.length !== USERNAME_LENGTH) {
 							errorEl.style.display = "block";
 						} else {
 							errorEl.style.display = "none";
 						}
-						
-						document.addEventListener("keydown", function (e) {
-							if (incomingSession) {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									answerCall();
-								} else if (e.key === "Escape") {
-									e.preventDefault();
-									declineCall();
-								}
-							}
-						});
 					});
 
 				document
 					.getElementById("callerID")
 					.addEventListener("input", function (e) {
 						const value = e.target.value.replace(/\D/g, "");
-						e.target.value = value.substring(0, 10);
+						e.target.value = value.substring(0, USERNAME_LENGTH);
 
 						const errorEl =
 							document.getElementById("callerIDError");
@@ -1263,7 +942,7 @@
 						if (
 							document.getElementById("saveCredentials").checked
 						) {
-							CookieStore.saveCredentials();
+							SecureStore.saveCredentials();
 						}
 					});
 
@@ -1273,7 +952,7 @@
 						if (
 							document.getElementById("saveCredentials").checked
 						) {
-							CookieStore.saveCredentials();
+							SecureStore.saveCredentials();
 						}
 					});
 
@@ -1283,7 +962,7 @@
 						if (
 							document.getElementById("saveCredentials").checked
 						) {
-							CookieStore.saveCredentials();
+							SecureStore.saveCredentials();
 						}
 					});
 
@@ -1293,18 +972,17 @@
 						if (
 							document.getElementById("saveCredentials").checked
 						) {
-							CookieStore.saveCredentials();
+							SecureStore.saveCredentials();
 						}
 					});
 
 				document
 					.getElementById("saveCredentials")
 					.addEventListener("change", function () {
-						CookieStore.saveCredentials();
+						SecureStore.saveCredentials();
 					});
 			});
 
-			let savedConfig = {};
 			let registeredUsername = null;
 
 			let userAgent = null;
@@ -1320,7 +998,7 @@
 			function validateNorthAmericanNumber(number) {
 				const cleaned = number.replace(/\D/g, "");
 
-				if (cleaned.length !== 10) return false;
+				if (cleaned.length !== USERNAME_LENGTH) return false;
 
 				const npaFirstDigit = parseInt(cleaned[0]);
 				const nxxFirstDigit = parseInt(cleaned[3]);
@@ -1437,7 +1115,9 @@
 					);
 					log("Error: SIP.js library not available");
 					return;
-				}
+				
+
+}
 
 				const server = document.getElementById("sipServer").value;
 				const username = document.getElementById("username").value;
@@ -1451,19 +1131,13 @@
 					return;
 				}
 
-				if (!/^\d{10}$/.test(username)) {
+				if (!isValidUsername(username)) {
 					alert("Username must be exactly 10 numeric digits");
 					document.getElementById("usernameError").style.display =
 						"block";
 					return;
 				}
 
-				savedConfig = {
-					server: "wss://tls.voicetel.com:443",
-					username,
-					displayName,
-					callerID,
-				};
 				registeredUsername = username;
 
 				try {
@@ -1490,7 +1164,7 @@
 						register: true,
 						registerOptions: {
 							registrar: `sip:tls.voicetel.com`,
-							expires: 300,
+							expires: SIP_REGISTRATION_EXPIRES_SEC,
 						},
 						sessionDescriptionHandlerFactoryOptions: {
 							constraints: {
@@ -1595,7 +1269,9 @@
 					if (userAgent) {
 						userAgent.unregister();
 						userAgent.stop();
-					}
+					
+
+}
 
 					isRegistered = false;
 					registeredUsername = null;
@@ -1776,6 +1452,8 @@
 			}
 
 			function handleIncomingCall(session) {
+				window.__incomingRaw = null;
+				window.__incomingDisplay = null;
 				if (currentSession) {
 					log("Auto-rejecting incoming call - already in a call");
 					session.reject();
@@ -1787,7 +1465,13 @@
 
 				log("SIP INVITE received");
 
-				const callerUri = session.remoteIdentity.uri.user;
+				const callerUri =
+					session.remoteIdentity &&
+					session.remoteIdentity.uri &&
+					session.remoteIdentity.uri.user
+						? session.remoteIdentity.uri.user
+						: "Unknown";
+				window.__incomingRaw = callerUri;
 				const callerName =
 					session.remoteIdentity.displayName || "Unknown";
 
@@ -1803,6 +1487,7 @@
 					callerName;
 				document.getElementById("incomingCallerNumber").textContent =
 					formattedNumber;
+				window.__incomingDisplay = formattedNumber;
 
 				document.getElementById("incomingCall").classList.add("active");
 
@@ -1817,7 +1502,7 @@
 						log("Auto-declining unanswered call after 30 seconds");
 						declineCall();
 					}
-				}, 30000);
+				}, INCOMING_CALL_TIMEOUT_MS);
 
 				setupIncomingSessionHandlers(session);
 			}
@@ -1951,11 +1636,9 @@
 						response.status_code &&
 						response.reason_phrase
 					) {
-						if (!session.on || !session.on.response) {
-							log(
-								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-							);
-						}
+						log(
+							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+						);
 
 						if (
 							!ringingStarted &&
@@ -2254,7 +1937,7 @@
 			}
 
 			function sendDTMF(digit) {
-				if (!currentSession) {
+				if (!currentSession && !__answeredIncoming) {
 					log("No active session for DTMF");
 					return false;
 				}
@@ -2272,12 +1955,12 @@
 
 				try {
 					const options = {
-						duration: 250,
-						interToneGap: 100,
+						duration: DTMF_DURATION_MS,
+						interToneGap: DTMF_INTERTONE_GAP_MS,
 					};
 
 					currentSession.dtmf(digit, options);
-					log(`DTMF sent: ${digit} (250ms duration)`);
+					log(`DTMF sent: ${digit} (${DTMF_DURATION_MS}ms duration)`);
 
 					return true;
 				} catch (error) {
@@ -2295,19 +1978,784 @@
 				if (incomingSession) {
 					try {
 						incomingSession.reject();
-					} catch (e) {
-					}
+					} catch (e) {}
 				}
 				if (currentSession) {
 					try {
 						currentSession.bye();
-					} catch (e) {
-					}
+					} catch (e) {}
 				}
 				if (userAgent) {
 					userAgent.stop();
 				}
 			});
 		</script>
-	</body>
+		<script>
+			// === Unified view toggler ===
+			function setView(view) {
+				const registerSection =
+					document.getElementById("registerSection");
+				const callSection = document.getElementById("callSection");
+				const configSection = document.getElementById("configSection");
+				const logSection = document.getElementById("logSection");
+				const historySection =
+					document.getElementById("historySection");
+				const buttons = document.querySelectorAll(".header-toggle");
+
+				// Reset all
+				registerSection.classList.add("hidden");
+				callSection.classList.add("hidden");
+				configSection.classList.remove("visible");
+				logSection.classList.remove("visible");
+				if (historySection) historySection.classList.remove("visible");
+
+				// Show target
+				if (view === "phone") {
+					registerSection.classList.remove("hidden");
+					callSection.classList.remove("hidden");
+				} else if (view === "settings") {
+					configSection.classList.add("visible");
+				} else if (view === "log") {
+					logSection.classList.add("visible");
+				} else if (view === "history") {
+					if (historySection) historySection.classList.add("visible");
+					if (typeof renderCallHistory === "function")
+						renderCallHistory();
+				}
+
+				// Header active
+				buttons.forEach((b) => b.classList.remove("active"));
+				const title =
+					view === "phone"
+						? "Phone"
+						: view === "settings"
+							? "Settings"
+							: view === "log"
+								? "Event Log"
+								: "Call History";
+				const btn = document.querySelector(
+					`.header-toggle[title="${title}"]`,
+				);
+				if (btn) btn.classList.add("active");
+			}
+
+			// Bind public handlers
+			window.showPhone = function () {
+				setView("phone");
+			};
+			window.showLog = function () {
+				setView("log");
+			};
+			window.showSettings = function () {
+				setView("settings");
+			};
+			window.showHistory = function () {
+				setView("history");
+			};
+
+			// Ensure history starts hidden
+			window.addEventListener("DOMContentLoaded", () => {
+				const historySection =
+					document.getElementById("historySection");
+				if (historySection) historySection.classList.remove("visible");
+			});
+
+			// === Call History using LocalForage ===
+			try {
+				localforage.config({
+					name: "VoiceTel",
+					storeName: "callHistory",
+				});
+			} catch (e) {
+				console.error(e);
+			}
+
+			async function addCallToHistory(type, number, duration) {
+				try {
+					const entry = {
+						type,
+						number,
+						duration,
+						timestamp: new Date().toISOString(),
+					};
+					const list = (await localforage.getItem("history")) || [];
+					list.unshift(entry);
+					await localforage.setItem("history", list);
+				} catch (e) {
+					console.error("history save failed", e);
+				}
+			}
+
+			function fmt(iso) {
+				try {
+					return new Date(iso).toLocaleString();
+				} catch {
+					return iso;
+				}
+			}
+
+			async function renderCallHistory() {
+				const el = document.getElementById("callHistory");
+				if (!el) return;
+				const list = (await localforage.getItem("history")) || [];
+				el.innerHTML = "";
+				if (list.length === 0) {
+					el.innerHTML =
+						"<div style='text-align:center;color:#999'>No call history yet</div>";
+					return;
+				}
+				for (const item of list) {
+					let icon = "⛔";
+					if (item.type === "incoming") icon = "⬇️";
+					else if (item.type === "outgoing") icon = "⬆️";
+					const row = document.createElement("div");
+					row.className = "log-entry";
+					row.innerHTML = `${icon} <a href="#" class="history-call" onclick="return redial('${item.number}')"><strong>${item.number}</strong></a><br><small>${fmt(item.timestamp)}</small> • <em>${item.duration}</em>`;
+					el.appendChild(row);
+				}
+			}
+
+			async function clearHistory() {
+				await localforage.removeItem("history");
+				renderCallHistory();
+			}
+
+			// --- Hook into lifecycle ---
+			let __callDirection = null;
+			let __answeredIncoming = false;
+			const __orig_makeCall = window.makeCall;
+			window.makeCall = function () {
+				__callDirection = "outgoing";
+				return __orig_makeCall.apply(this, arguments);
+			};
+
+			const __orig_answerCall = window.answerCall;
+			window.answerCall = function () {
+				__callDirection = "incoming";
+				__answeredIncoming = true;
+				return __orig_answerCall.apply(this, arguments);
+			};
+
+			const __orig_declineCall = window.declineCall;
+			window.declineCall = function () {
+				try {
+					const num =
+						window.__incomingRaw &&
+						window.__incomingRaw !== "Unknown"
+							? window.__incomingRaw
+							: window.__incomingDisplay ||
+								document.getElementById("incomingCallerNumber")
+									.textContent ||
+								"Unknown";
+					addCallToHistory("missed", num, "00:00");
+				} catch (e) {}
+				return __orig_declineCall.apply(this, arguments);
+			};
+
+			const __orig_endCall = window.endCall;
+			window.endCall = function () {
+				try {
+					if (__callDirection === "outgoing") {
+						const toNum = (
+							document.getElementById("callNumber").value || ""
+						).trim();
+						const num =
+							toNum ||
+							(currentSession &&
+								currentSession.request &&
+								currentSession.request.to &&
+								currentSession.request.to.uri &&
+								currentSession.request.to.uri.user) ||
+							"Unknown";
+						addCallToHistory(
+							"outgoing",
+							num,
+							document.getElementById("callDuration")
+								.textContent || "00:00",
+						);
+					} else if (__callDirection === "incoming") {
+						const num =
+							window.__incomingRaw &&
+							window.__incomingRaw !== "Unknown"
+								? window.__incomingRaw
+								: window.__incomingDisplay ||
+									document.getElementById(
+										"incomingCallerNumber",
+									).textContent ||
+									"Unknown";
+						addCallToHistory(
+							"incoming",
+							num,
+							document.getElementById("callDuration")
+								.textContent || "00:00",
+						);
+					}
+				} catch (e) {}
+				__callDirection = null;
+				return __orig_endCall.apply(this, arguments);
+			};
+
+			function redial(num) {
+				try {
+					document.getElementById("callNumber").value = (
+						num || ""
+					).replace(/[^0-9+]/g, "");
+					setView("phone");
+					if (typeof makeCall === "function") makeCall();
+				} catch (e) {}
+				return false;
+			}
+
+			// Missed if caller hangs up before answer
+			const __orig_setupIncomingSessionHandlers =
+				window.setupIncomingSessionHandlers;
+			window.setupIncomingSessionHandlers = function (session) {
+				__answeredIncoming = false;
+				__orig_setupIncomingSessionHandlers.call(this, session);
+				try {
+					session.on("terminated", () => {
+						if (!currentSession && !__answeredIncoming) {
+							const num =
+								window.__incomingRaw &&
+								window.__incomingRaw !== "Unknown"
+									? window.__incomingRaw
+									: window.__incomingDisplay ||
+										document.getElementById(
+											"incomingCallerNumber",
+										).textContent ||
+										"Unknown";
+							addCallToHistory("missed", num, "00:00");
+						}
+					});
+				} catch (e) {}
+			};
+		</script>
+
+		<script>
+			/* --- AppStore: save/load SIP config + checkbox prefs (with auto-register) --- */
+			(function () {
+				if (typeof window.localforage === "undefined") {
+					console.warn(
+						"localforage not found; AppStore will be disabled.",
+					);
+					return;
+				}
+				if (typeof window.CookieStore === "undefined") {
+					console.warn(
+						"CookieStore not found; AppStore will still attach but encryption may fail.",
+					);
+				}
+
+				const PREFS_KEY = "uiPrefs";
+				const CONFIG_KEY = "sipConfig";
+
+				const AppStore = {
+					configKey: CONFIG_KEY,
+					prefsKey: PREFS_KEY,
+
+					save: async function () {
+						try {
+							const el = (id) => document.getElementById(id);
+							const saveCredsEl = el("saveCredentials");
+							const saveConfigEl = el("saveConfigApp");
+							const hideCIDEl = el("hideCallerID");
+							const autoRegEl = el("registerOnStartup");
+
+							const prefs = {
+								saveCredentials: !!(
+									saveCredsEl && saveCredsEl.checked
+								),
+								saveConfigApp: !!(
+									saveConfigEl && saveConfigEl.checked
+								),
+								hideCallerID: !!(
+									hideCIDEl && hideCIDEl.checked
+								),
+								registerOnStartup: !!(
+									autoRegEl && autoRegEl.checked
+								),
+							};
+							await localforage.setItem(this.prefsKey, prefs);
+
+							if (prefs.saveConfigApp) {
+								const u = el("username");
+								const p = el("password");
+								const dn = el("displayName");
+								const cid = el("callerID");
+
+								const username = ((u && u.value) || "").trim();
+								const passwordRaw = (p && p.value) || "";
+								const displayName = (dn && dn.value) || "";
+								const callerID = (cid && cid.value) || "";
+
+								if (!isValidUsername(username)) {
+									if (window.log)
+										log(
+											"⚠️ Cannot save app config - username must be exactly 10 digits",
+										);
+									return;
+								}
+
+								try {
+									CookieStore &&
+										CookieStore.getEncryptionKey &&
+										CookieStore.getEncryptionKey();
+								} catch (e) {}
+
+								const payload = {
+									username: username || "",
+									/* password removed from AppStore; stored via SecureStore */
+									displayName,
+									callerID,
+									hideCallerID: prefs.hideCallerID,
+									saveCredentials: prefs.saveCredentials,
+									saveConfigApp: prefs.saveConfigApp,
+									registerOnStartup: prefs.registerOnStartup,
+								};
+
+								await localforage.setItem(
+									this.configKey,
+									payload,
+								);
+								if (window.log)
+									log(
+										"SIP configuration saved to app storage",
+									);
+							} else {
+								await localforage.removeItem(this.configKey);
+								if (window.log)
+									log(
+										"SIP configuration removed from app storage",
+									);
+							}
+						} catch (e) {
+							console.error("AppStore.save error", e);
+							if (window.log)
+								log(
+									"⚠️ Failed saving SIP configuration or prefs",
+								);
+						}
+					},
+
+					load: async function () {
+						try {
+							const el = (id) => document.getElementById(id);
+
+							// Load UI prefs
+							const prefs =
+								(await localforage.getItem(this.prefsKey)) ||
+								{};
+							if (el("saveCredentials"))
+								el("saveCredentials").checked =
+									!!prefs.saveCredentials;
+							if (el("saveConfigApp"))
+								el("saveConfigApp").checked =
+									!!prefs.saveConfigApp;
+							if (el("hideCallerID"))
+								el("hideCallerID").checked =
+									!!prefs.hideCallerID;
+							if (el("registerOnStartup"))
+								el("registerOnStartup").checked =
+									!!prefs.registerOnStartup;
+
+							// Load config fields if saved
+							const cfg = await localforage.getItem(
+								this.configKey,
+							);
+							if (!cfg) return;
+
+							if (!isValidUsername(cfg.username)) {
+								if (window.log)
+									log(
+										"⚠️ App-stored username failed validation; ignoring saved config",
+									);
+								await localforage.removeItem(this.configKey);
+								return;
+							}
+
+							if (el("username") && cfg.username)
+								el("username").value = cfg.username;
+							if (el("displayName") && cfg.displayName)
+								el("displayName").value = cfg.displayName;
+							if (el("callerID") && cfg.callerID)
+								el("callerID").value = cfg.callerID;
+
+							if (cfg.passwordEnc && el("password")) {
+								try {
+									CookieStore &&
+										CookieStore.getEncryptionKey &&
+										CookieStore.getEncryptionKey();
+									el("password").value =
+										CookieStore && CookieStore.decrypt
+											? CookieStore.decrypt(
+													cfg.passwordEnc,
+												)
+											: "";
+								} catch (e) {
+									console.error(
+										"AppStore password decrypt failed",
+										e,
+									);
+									if (window.log)
+										log(
+											"⚠️ App-stored password decryption failed; clearing app config",
+										);
+									await localforage.removeItem(
+										this.configKey,
+									);
+								}
+							}
+
+							// Apply config prefs
+							if (
+								typeof cfg.hideCallerID === "boolean" &&
+								el("hideCallerID")
+							) {
+								el("hideCallerID").checked = cfg.hideCallerID;
+							}
+							if (
+								typeof cfg.saveCredentials === "boolean" &&
+								el("saveCredentials")
+							) {
+								el("saveCredentials").checked =
+									cfg.saveCredentials;
+							}
+							if (
+								typeof cfg.saveConfigApp === "boolean" &&
+								el("saveConfigApp")
+							) {
+								el("saveConfigApp").checked = cfg.saveConfigApp;
+							}
+							if (
+								typeof cfg.registerOnStartup === "boolean" &&
+								el("registerOnStartup")
+							) {
+								el("registerOnStartup").checked =
+									cfg.registerOnStartup;
+							}
+
+							if (window.log)
+								log(
+									"SIP configuration loaded from app storage",
+								);
+						} catch (e) {
+							console.error("AppStore.load error", e);
+							if (window.log)
+								log(
+									"⚠️ Failed loading SIP configuration or prefs",
+								);
+						}
+					},
+
+					clear: async function () {
+						try {
+							await localforage.removeItem(this.configKey);
+							await localforage.removeItem(this.prefsKey);
+						} catch (e) {
+							console.error("AppStore.clear error", e);
+						}
+					},
+				};
+				window.VoiceTelAppStore = AppStore;
+
+				function bindFieldPersistence() {
+					const ids = [
+						"username",
+						"password",
+						"displayName",
+						"callerID",
+						"hideCallerID",
+					];
+					ids.forEach((id) => {
+						const el = document.getElementById(id);
+						if (el && !el.__appstoreBound) {
+							el.addEventListener("change", function () {
+								try {
+									const sc =
+										document.getElementById(
+											"saveCredentials",
+										);
+									if (
+										sc &&
+										sc.checked &&
+										window.CookieStore &&
+										CookieStore.saveCredentials
+									) {
+										SecureStore.saveCredentials();
+									}
+								} catch (e) {}
+								AppStore.save();
+							});
+							el.__appstoreBound = true;
+						}
+					});
+
+					const cbIds = [
+						"saveCredentials",
+						"saveConfigApp",
+						"registerOnStartup",
+					];
+					cbIds.forEach((id) => {
+						const box = document.getElementById(id);
+						if (box && !box.__appstoreBound) {
+							box.addEventListener("change", function () {
+								try {
+									if (
+										id === "saveCredentials" &&
+										window.CookieStore &&
+										CookieStore.saveCredentials
+									) {
+										SecureStore.saveCredentials();
+									}
+								} catch (e) {}
+								AppStore.save();
+							});
+							box.__appstoreBound = true;
+						}
+					});
+				}
+
+				async function clearAllSaved() {
+					const el = (id) => document.getElementById(id);
+
+					// Clear cookies
+					try {
+						CookieStore &&
+							CookieStore.clearAll &&
+							CookieStore.clearAll();
+					} catch (e) {}
+
+					// Clear app storage
+					try {
+						await localforage.removeItem(CONFIG_KEY);
+						await localforage.removeItem(PREFS_KEY);
+						await localforage.removeItem("history");
+					} catch (e) {
+						console.error("localforage clear error", e);
+					}
+
+					// Wipe fields & uncheck boxes
+					const fieldIds = [
+						"username",
+						"password",
+						"displayName",
+						"callerID",
+						"callNumber",
+					];
+					fieldIds.forEach((id) => {
+						const f = el(id);
+						if (f) f.value = "";
+					});
+
+					const cbIds = [
+						"saveConfigApp",
+						"saveCredentials",
+						"hideCallerID",
+						"registerOnStartup",
+					];
+					cbIds.forEach((id) => {
+						const c = el(id);
+						if (c) c.checked = false;
+					});
+
+					if (typeof renderCallHistory === "function") {
+						try {
+							renderCallHistory();
+						} catch (e) {}
+					}
+					if (typeof log === "function") {
+						log(
+							"All saved data cleared (cookies + app storage + prefs). Fields reset.",
+						);
+					}
+				}
+				window.clearAllSaved = clearAllSaved;
+
+				function hookRegisterButton() {
+					const candidates = Array.from(
+						document.querySelectorAll(
+							'button, input[type="submit"], a',
+						),
+					);
+					candidates.forEach((el) => {
+						if (
+							el &&
+							typeof el.textContent === "string" &&
+							el.textContent.trim().toLowerCase() ===
+								"register" &&
+							!el.__appstoreRegisterBound
+						) {
+							el.addEventListener("click", function () {
+								AppStore.save();
+							});
+							el.__appstoreRegisterBound = true;
+						}
+					});
+				}
+
+				window.addEventListener("DOMContentLoaded", function () {
+					try {
+						AppStore.load();
+					} catch (e) {}
+					bindFieldPersistence();
+					hookRegisterButton();
+
+					// Auto-register on startup if enabled
+					try {
+						const auto =
+							document.getElementById("registerOnStartup");
+						const u = document.getElementById("username");
+						const p = document.getElementById("password");
+						if (
+							auto &&
+							auto.checked &&
+							u &&
+							p &&
+							isValidUsername(u.value) &&
+							p.value
+						) {
+							if (
+								typeof SIP !== "undefined" &&
+								typeof register === "function"
+							) {
+								setTimeout(() => {
+									log(
+										"Auto-register on startup is enabled – attempting registration...",
+									);
+									register();
+								}, 50);
+							}
+						}
+					} catch (e) {
+
+}
+
+					// Keep bindings for dynamically added elements
+					const mo = new MutationObserver(() => {
+						bindFieldPersistence();
+						hookRegisterButton();
+					});
+					mo.observe(document.body, {
+						childList: true,
+						subtree: true,
+					});
+				});
+			})();
+		</script>
+	
+<script>
+// === SecureStore (AES-GCM + localforage) — cookie-free credential storage ===
+(function () {
+  if (!window.localforage) { console.warn("localforage missing; SecureStore disabled."); return; }
+  if (!window.crypto || !window.crypto.subtle) { console.warn("WebCrypto not available; SecureStore disabled."); return; }
+
+  const te = new TextEncoder();
+  const td = new TextDecoder();
+
+  function b64e(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+  function b64d(b64) { const s = atob(b64); const a = new Uint8Array(s.length); for (let i=0;i<s.length;i++) a[i]=s.charCodeAt(i); return a.buffer; }
+
+  function getOrCreateSalt() {
+    const k = "vt_aesgcm_salt";
+    let v = localStorage.getItem(k);
+    if (!v) { v = b64e(crypto.getRandomValues(new Uint8Array(16))); localStorage.setItem(k, v); }
+    return b64d(v);
+  }
+
+  // Basic device fingerprint (stable per browser profile)
+  function deviceFingerprint() {
+    try {
+      const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || "");
+      const langs = (navigator.languages || []).join(",");
+      const dims = (screen ? (screen.width + "x" + screen.height) : "");
+      return [navigator.userAgent, navigator.platform||"", tz, langs, dims].join("|");
+    } catch(e) { return navigator.userAgent || "voicetel-default"; }
+  }
+
+  async function deriveKey(secret, iterations = 150000) {
+    const base = await crypto.subtle.importKey("raw", te.encode(secret), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt: getOrCreateSalt(), iterations, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["encrypt","decrypt"]
+    );
+  }
+
+  async function encryptJSON(key, obj) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const pt = te.encode(JSON.stringify(obj));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, pt);
+    return { v: 1, iv: b64e(iv), ct: b64e(ct) };
+  }
+
+  async function decryptJSON(key, payload) {
+    const iv = new Uint8Array(b64d(payload.iv));
+    const ct = b64d(payload.ct);
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+    return JSON.parse(td.decode(pt));
+  }
+
+  const STORAGE_KEY = "vt.secure.credentials";
+
+  window.SecureStore = {
+    async saveCredentials(creds) {
+      const key = await deriveKey(deviceFingerprint());
+      const enc = await encryptJSON(key, creds);
+      await localforage.setItem(STORAGE_KEY, enc);
+      return true;
+    },
+    async loadCredentials() {
+      const payload = await localforage.getItem(STORAGE_KEY);
+      if (!payload) return null;
+      try {
+        const key = await deriveKey(deviceFingerprint());
+        return await decryptJSON(key, payload);
+      } catch(e) {
+        console.warn("SecureStore decrypt failed", e);
+        return null;
+      }
+    },
+    async clear() {
+      await localforage.removeItem(STORAGE_KEY);
+    }
+  };
+})();
+</script>
+
+
+<script>
+// Persist credentials from form if "Remember me" is checked
+async function persistCredentialsFromUI() {
+  try {
+    const remember = document.getElementById("saveCredentials");
+    if (remember && remember.checked && window.SecureStore) {
+      const server = (document.getElementById("sipServer") || document.getElementById("server"))?.value || "";
+      const username = document.getElementById("username")?.value || "";
+      const displayName = document.getElementById("displayName")?.value || "";
+      const callerID = document.getElementById("callerID")?.value || "";
+      const password = document.getElementById("password")?.value || "";
+      await SecureStore.saveCredentials({ server, username, displayName, callerID, password });
+    }
+  } catch(e) { console.warn("Secure persist failed", e); }
+}
+
+// On startup, try to autofill from SecureStore
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    if (window.SecureStore) {
+      const restored = await SecureStore.loadCredentials();
+      if (restored) {
+        const sid = (document.getElementById("sipServer") || document.getElementById("server"));
+        if (sid) sid.value = restored.server || sid.value || "";
+        const un = document.getElementById("username"); if (un) un.value = restored.username || un.value || "";
+        const dn = document.getElementById("displayName"); if (dn) dn.value = restored.displayName || dn.value || "";
+        const cid = document.getElementById("callerID"); if (cid) cid.value = restored.callerID || cid.value || "";
+        const pw = document.getElementById("password"); if (pw) pw.value = restored.password || "";
+        const remember = document.getElementById("saveCredentials"); if (remember) remember.checked = true;
+      }
+    }
+  } catch(e) { console.warn("Secure autofill failed", e); }
+});
+</script>
+
+</body>
 </html>
