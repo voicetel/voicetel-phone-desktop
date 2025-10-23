@@ -16,10 +16,9 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **DTMF Support** - Send touch-tone digits during calls via dialpad or keyboard
 
 ### 🔐 Security & Privacy
-- **Device Fingerprint Encryption** - Credentials encrypted using unique browser/device fingerprint
-- **Secure Storage** - Cookie-based storage with Secure and SameSite=Strict flags
+- **Local Storage** - Credentials stored locally using browser storage
 - **Hide Caller ID** - Optional privacy mode for outgoing calls
-- **No External Dependencies** - All encryption happens locally, no external services contacted
+- **No External Dependencies** - All data processing happens locally
 
 ### 🎨 User Interface
 - **Three-Panel Design**

@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>VoiceTel Phone v3.5.2</title>
+		<title>VoiceTel Phone v3.5.4</title>
 		<style>
 			* {
 				margin: 0;
@@ -563,13 +563,12 @@
 								id="saveCredentials"
 								style="width: auto; margin-right: 8px"
 							/>
-							Save credentials locally
+							Save credentials
 						</label>
 						<small
 							style="color: #999; display: block; margin-top: 8px"
 						>
-							💾 Credentials are saved in this browser/app's local
-							storage only
+							💾 Credentials are saved in local storage
 						</small>
 
 						<label
@@ -583,8 +582,13 @@
 							"
 						>
 							<input type="checkbox" id="registerOnStartup" />
-							<span>Register automatically on startup</span>
+							<span>Register automatically</span>
 						</label>
+						<small
+							style="color: #999; display: block; margin-top: 8px"
+						>
+							🤖 Register automatically on startup
+						</small>
 
 						<div
 							class="storage-info"
@@ -836,7 +840,7 @@
 				storeName: "config",
 			});
 
-			// Simple Storage Manager - No encryption
+			// Simple Storage Manager
 			const Storage = {
 				CONFIG_KEY: "voicetel_config",
 				HISTORY_KEY: "voicetel_history",
@@ -977,6 +981,10 @@
 			let callTimer = null;
 			let callStartTime = null;
 			let ringingAudio = null;
+			
+			// Event listener cleanup tracking
+			let activeEventListeners = new Set();
+			let webSocketMessageHandler = null;
 
 			// Call tracking for history
 			let __callDirection = null;
@@ -1259,9 +1267,16 @@
 
 			function unregister() {
 				try {
+					// Clean up WebSocket event listeners
+					if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+						userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+						webSocketMessageHandler = null;
+					}
+					
 					if (userAgent) {
 						userAgent.unregister();
 						userAgent.stop();
+						userAgent = null;
 					}
 
 					isRegistered = false;
@@ -1372,7 +1387,8 @@
 					if (currentSession.request) {
 						const callId = currentSession.request.callId;
 
-						const messageHandler = function (e) {
+						// Store the message handler for cleanup
+						webSocketMessageHandler = function (e) {
 							if (e && e.data && e.data.includes(callId)) {
 								const lines = e.data.split("\r\n");
 								for (let line of lines) {
@@ -1404,7 +1420,7 @@
 						if (userAgent.transport && userAgent.transport.ws) {
 							userAgent.transport.ws.addEventListener(
 								"message",
-								messageHandler,
+								webSocketMessageHandler,
 							);
 
 							currentSession.on("terminated", () => {
@@ -1412,20 +1428,26 @@
 									stopRinging();
 									sessionRingingStarted = false;
 								}
-								userAgent.transport.ws.removeEventListener(
-									"message",
-									messageHandler,
-								);
+								if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+									userAgent.transport.ws.removeEventListener(
+										"message",
+										webSocketMessageHandler,
+									);
+									webSocketMessageHandler = null;
+								}
 							});
 							currentSession.on("failed", () => {
 								if (sessionRingingStarted) {
 									stopRinging();
 									sessionRingingStarted = false;
 								}
-								userAgent.transport.ws.removeEventListener(
-									"message",
-									messageHandler,
-								);
+								if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+									userAgent.transport.ws.removeEventListener(
+										"message",
+										webSocketMessageHandler,
+									);
+									webSocketMessageHandler = null;
+								}
 							});
 						}
 					}
@@ -1498,6 +1520,9 @@
 			}
 
 			function setupIncomingSessionHandlers(session) {
+				// Track if this incoming call was answered
+				let wasAnswered = false;
+
 				session.on("terminated", () => {
 					if (incomingCallTimeout) {
 						clearTimeout(incomingCallTimeout);
@@ -1505,10 +1530,10 @@
 					}
 					hideIncomingCallUI();
 					stopRinging();
-					log("Incoming call ended by caller");
 
-					// Add missed call to history if not answered
-					if (!__answeredIncoming) {
+					// Only add "missed" if it was NOT answered and NOT manually declined
+					if (!wasAnswered && !session.__declinedByUser) {
+						log("Incoming call ended by caller (missed)");
 						const num =
 							__incomingRaw && __incomingRaw !== "Unknown"
 								? __incomingRaw
@@ -1540,6 +1565,11 @@
 					log("Incoming call was rejected");
 					incomingSession = null;
 				});
+
+				// Mark as answered when accepted
+				session.on("accepted", () => {
+					wasAnswered = true;
+				});
 			}
 
 			function answerCall() {
@@ -1553,8 +1583,9 @@
 					incomingCallTimeout = null;
 				}
 
+				// Transfer session to current and mark as answered
 				currentSession = incomingSession;
-				incomingSession = null;
+				incomingSession = null; // Clear incoming reference IMMEDIATELY
 				__callDirection = "incoming";
 				__answeredIncoming = true;
 
@@ -1579,7 +1610,7 @@
 					incomingCallTimeout = null;
 				}
 
-				// Add to missed calls history
+				// Record as declined (this is correct for a manual press)
 				const num =
 					__incomingRaw && __incomingRaw !== "Unknown"
 						? __incomingRaw
@@ -1587,13 +1618,21 @@
 							document.getElementById("incomingCallerNumber")
 								.textContent ||
 							"Unknown";
-				Storage.addCallToHistory("missed", num, "00:00");
+				Storage.addCallToHistory("declined", num, "00:00");
 
-				incomingSession.reject();
+				// mark this specific incoming session as manually declined
+				incomingSession.__declinedByUser = true;
+
+				// Send busy
+				incomingSession.reject({
+					statusCode: 486,
+					reasonPhrase: "Busy Here",
+				});
+
 				hideIncomingCallUI();
 				stopRinging();
 				log("Call declined");
-				log("SIP/2.0 603 Decline");
+				log("SIP/2.0 486 Busy Here");
 				incomingSession = null;
 			}
 
@@ -1657,6 +1696,16 @@
 						) {
 							startRinging();
 							ringingStarted = true;
+						}
+
+						// Mute early media if we receive 183
+						if (response.status_code === 183) {
+							const remoteAudio =
+								document.getElementById("remoteAudio");
+							if (remoteAudio) {
+								remoteAudio.volume = 0; // Silence server audio during ringing
+								log("Early media muted during ringing");
+							}
 						}
 					}
 				});
@@ -1788,6 +1837,7 @@
 						const remoteAudio =
 							document.getElementById("remoteAudio");
 						remoteAudio.srcObject = remoteStream;
+						remoteAudio.volume = 1.0; // Unmute when call connects
 					} catch (e) {
 						log("Error setting up audio: " + e.message);
 					}
@@ -1807,6 +1857,12 @@
 						const remoteAudio =
 							document.getElementById("remoteAudio");
 						remoteAudio.srcObject = remoteStream;
+
+						// Mute if still ringing (early media)
+						if (ringingStarted) {
+							remoteAudio.volume = 0;
+							log("Early media audio track muted");
+						}
 					} catch (e) {
 						log("Error handling track: " + e.message);
 					}
@@ -1865,6 +1921,21 @@
 			}
 
 			function endCall() {
+				// Clean up WebSocket event listeners
+				if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+					userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+					webSocketMessageHandler = null;
+				}
+				
+				// Clean up ringing audio
+				if (ringingAudio) {
+					ringingAudio.stop();
+					ringingAudio = null;
+				}
+				
+				// Clean up call timer
+				stopCallTimer();
+				
 				// Save call to history
 				try {
 					if (__callDirection === "outgoing") {
@@ -2060,10 +2131,17 @@
 
 				el.innerHTML = "";
 				history.forEach((item) => {
-					let icon = "❌";
-					if (item.type === "incoming") icon = "⬇️";
-					else if (item.type === "outgoing") icon = "⬆️";
-					else if (item.type === "missed") icon = "📵";
+					let icon = "❓"; // Default for unknown
+
+					if (item.type === "incoming") {
+						icon = "⬇️"; // Incoming answered call
+					} else if (item.type === "outgoing") {
+						icon = "⬆️"; // Outgoing call
+					} else if (item.type === "missed") {
+						icon = "🔴"; // Missed call (rang but not answered)
+					} else if (item.type === "declined") {
+						icon = "⛔"; // Declined call (explicitly rejected)
+					}
 
 					const row = document.createElement("div");
 					row.className = "log-entry";
@@ -2135,8 +2213,8 @@
 					return;
 				}
 
-				log("VoiceTel Phone v3.5.2 ready");
-				log("Using local storage (no encryption)");
+				log("VoiceTel Phone v3.5.4 ready");
+				log("Using local storage");
 				log("SIP.js " + (SIP.version || "0.15.x") + " loaded");
 				log("Server: tls.voicetel.com (wss://443)");
 
@@ -2206,25 +2284,63 @@
 				});
 			});
 
-			// Cleanup on window close
-			window.addEventListener("beforeunload", () => {
+			// Cleanup function for proper resource management
+			function cleanupAllResources() {
+				// Stop ringing audio
 				stopRinging();
+				if (ringingAudio) {
+					ringingAudio.stop();
+					ringingAudio = null;
+				}
+				
+				// Clear all timeouts
 				if (incomingCallTimeout) {
 					clearTimeout(incomingCallTimeout);
+					incomingCallTimeout = null;
 				}
+				if (callTimer) {
+					clearInterval(callTimer);
+					callTimer = null;
+				}
+				
+				// Clean up WebSocket event listeners
+				if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+					userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+					webSocketMessageHandler = null;
+				}
+				
+				// Clean up SIP sessions
 				if (incomingSession) {
 					try {
 						incomingSession.reject();
 					} catch (e) {}
+					incomingSession = null;
 				}
 				if (currentSession) {
 					try {
 						currentSession.bye();
 					} catch (e) {}
+					currentSession = null;
 				}
 				if (userAgent) {
-					userAgent.stop();
+					try {
+						userAgent.stop();
+					} catch (e) {}
+					userAgent = null;
 				}
+				
+				// Reset all state
+				isRegistered = false;
+				registeredUsername = null;
+				__callDirection = null;
+				__answeredIncoming = false;
+				__incomingRaw = null;
+				__incomingDisplay = null;
+			}
+
+			// Cleanup on window close
+			window.addEventListener("beforeunload", () => {
+				cleanupAllResources();
 			});
 		</script>
 	</body>

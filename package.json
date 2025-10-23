@@ -1,6 +1,6 @@
 {
 	"name": "voicetel-phone",
-	"version": "3.5.2",
+	"version": "3.5.4",
 	"description": "VoiceTel Phone",
 	"main": "main.js",
 	"scripts": {
@@ -135,7 +135,7 @@
 		"email": "support@voicetel.com",
 		"url": "http://www.voicetel.com"
 	},
-	"homepage": "https://github.com/voicetel/voicetel-phone",
+	"homepage": "https://github.com/voicetel/voicetel-phone-desktop",
 	"license": "MIT",
 	"devDependencies": {
 		"electron": "^38.2.1",
