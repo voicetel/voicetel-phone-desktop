@@ -93,9 +93,11 @@
 			],
 			"category": "Network",
 			"desktop": {
-				"Name": "VoiceTel",
-				"Comment": "VoiceTel WebRTC SIP Phone",
-				"Categories": "Network;Telephony;"
+				"entry": {
+					"Name": "VoiceTel",
+					"Comment": "VoiceTel WebRTC SIP Phone",
+					"Categories": "Network;Telephony;"
+				}
 			}
 		},
 		"files": [
@@ -139,7 +141,6 @@
 	"license": "MIT",
 	"devDependencies": {
 		"electron": "^38.2.1",
-		"electron-builder": "^24.9.1",
-		"electron-icon-builder": "^2.0.1"
+		"electron-builder": "^26.0.12"
 	}
 }

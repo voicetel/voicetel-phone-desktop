@@ -1,40 +1,98 @@
 # Dependencies
 node_modules/
-
-# Build output
-dist/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Logs
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment
-.env
-.env.local
+# Build output
+dist/
+out/
+build/Release/
 
-# Electron builder output
+# Electron specific
 *.dmg
 *.exe
 *.AppImage
 *.deb
 *.rpm
+*.zip
+*.tar.gz
+*.snap
+*.flatpak
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Temporary files
 *.tmp
 *.temp
+.tmp/
+.temp/
 
-# Don't ignore build directory (contains icons)
+# Coverage and testing
+coverage/
+.nyc_output/
+.jest/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Keep build directory with icons
 !build/
+!build/icons/
+!build/entitlements.mac.plist
