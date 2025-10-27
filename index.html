@@ -1675,11 +1675,9 @@
 
 			function setupSessionHandlers(session) {
 				let ringingStarted = false;
-				console.log("Setting up session handlers, session.on exists:", !!session.on);
 
 				if (session.on) {
 					session.on("response", (response) => {
-						console.log("Session response event:", response?.status_code, response?.reason_phrase);
 						if (
 							response &&
 							response.status_code &&
@@ -1699,13 +1697,11 @@
 							}
 
 							if (response.status_code === 200) {
-								console.log("Got 200 OK response - call should be accepted!");
 								if (ringingStarted) {
 									stopRinging();
 									ringingStarted = false;
 								}
 								// Start timer immediately when we get 200 OK
-								console.log("Starting timer from 200 OK response");
 								startCallTimer();
 							}
 						}
@@ -1812,7 +1808,6 @@
 				});
 
 					session.on("accepted", (response) => {
-						console.log("Session accepted event fired!");
 						if (
 							response &&
 							response.status_code &&
@@ -1855,7 +1850,6 @@
 						"Type or press dialpad for DTMF";
 					document.getElementById("callNumber").focus();
 
-					console.log("About to start call timer...");
 					startCallTimer();
 
 					try {
@@ -2018,10 +2012,8 @@
 			}
 
 			function startCallTimer() {
-				console.log("startCallTimer called");
 				callStartTime = Date.now();
 				callTimer = setInterval(updateCallDuration, 1000);
-				console.log("Timer started, callStartTime:", callStartTime, "callTimer:", callTimer);
 			}
 
 			function stopCallTimer() {
@@ -2034,7 +2026,6 @@
 
 			function updateCallDuration() {
 				if (!callStartTime) {
-					console.log("updateCallDuration: callStartTime is null");
 					return;
 				}
 
@@ -2044,7 +2035,6 @@
 				const minutes = Math.floor(duration / 60);
 				const seconds = duration % 60;
 
-				console.log("Updating call duration:", duration, "seconds");
 				document.getElementById("callDuration").textContent =
 					`${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 			}
