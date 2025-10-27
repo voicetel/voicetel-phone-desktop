@@ -1,5 +1,11 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
+const packageJson = require("./package.json");
+
+// App version and configuration from package.json
+const APP_VERSION = packageJson.version;
+const SIP_DOMAIN = packageJson.config?.sipDomain || "tls.voicetel.com";
+const SIP_SERVER = packageJson.config?.sipServer || "wss://tls.voicetel.com:443";
 
 let mainWindow;
 
@@ -28,7 +34,9 @@ if (process.platform === "linux") {
 // Register before app is ready
 app.whenReady().then(() => {
 	console.log("Electron app ready, creating window...");
-	console.log("App version:", app.getVersion());
+	console.log("App version:", APP_VERSION);
+	console.log("SIP Domain:", SIP_DOMAIN);
+	console.log("SIP Server:", SIP_SERVER);
 	console.log("Electron version:", process.versions.electron);
 	console.log("Chrome version:", process.versions.chrome);
 
@@ -76,6 +84,16 @@ function createWindow() {
 
 	// Load file directly for stable origin
 	const indexPath = path.join(__dirname, "index.html");
+	
+	// Inject configuration into the page before loading
+	mainWindow.webContents.once('dom-ready', () => {
+		mainWindow.webContents.executeJavaScript(`
+			window.VOICETEL_VERSION = "${APP_VERSION}";
+			window.VOICETEL_SIP_DOMAIN = "${SIP_DOMAIN}";
+			window.VOICETEL_SIP_SERVER = "${SIP_SERVER}";
+		`);
+	});
+	
 	mainWindow.loadFile(indexPath);
 
 	mainWindow.on("closed", () => {
@@ -86,7 +104,7 @@ function createWindow() {
 
 	// Set user agent
 	const currentUA = session.getUserAgent();
-	session.setUserAgent(currentUA + " VoiceTelPhone/3.5");
+	session.setUserAgent(currentUA + ` VoiceTel/${APP_VERSION}`);
 
 	// Auto-grant media permissions - critical for WebRTC
 	session.setPermissionRequestHandler((webContents, permission, callback) => {

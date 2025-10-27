@@ -3,6 +3,10 @@
 	"version": "3.5.4",
 	"description": "VoiceTel Phone",
 	"main": "main.js",
+	"config": {
+		"sipDomain": "tls.voicetel.com",
+		"sipServer": "wss://tls.voicetel.com:443"
+	},
 	"scripts": {
 		"start": "electron .",
 		"start:nosandbox": "ELECTRON_DISABLE_SANDBOX=1 electron .",

@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>VoiceTel Phone v3.5.4</title>
+		<title>VoiceTel Phone</title>
 		<style>
 			* {
 				margin: 0;
@@ -461,7 +461,7 @@
 					<input
 						type="hidden"
 						id="sipServer"
-						value="wss://tls.voicetel.com:443"
+						value=""
 					/>
 
 					<div class="form-group">
@@ -744,8 +744,7 @@
 							font-size: 12px;
 						"
 					>
-						WebSocket: wss://tls.voicetel.com:443 | SIP Domain:
-						tls.voicetel.com
+						WebSocket: Loading... | SIP Domain: Loading...
 					</div>
 					
 					<details
@@ -834,6 +833,9 @@
 			const DTMF_INTERTONE_GAP_MS = 100;
 			const SIP_REGISTRATION_EXPIRES_SEC = 300;
 			const USERNAME_LENGTH = 10;
+			const APP_VERSION = window.VOICETEL_VERSION || "3.5.4";
+			const SIP_DOMAIN = window.VOICETEL_SIP_DOMAIN || "tls.voicetel.com";
+			const SIP_SERVER = window.VOICETEL_SIP_SERVER || "wss://tls.voicetel.com:443";
 
 			// Configure localforage
 			localforage.config({
@@ -1146,9 +1148,9 @@
 
 				try {
 					log("Starting registration...");
-					log("Connecting to VoiceTel server (tls.voicetel.com)...");
+					log(`Connecting to VoiceTel server (${SIP_DOMAIN})...`);
 
-					const uri = `sip:${username}@tls.voicetel.com`;
+					const uri = `sip:${username}@${SIP_DOMAIN}`;
 
 					const transportOptions = {
 						wsServers: [server],
@@ -1165,7 +1167,7 @@
 						displayName: displayName,
 						register: true,
 						registerOptions: {
-							registrar: `sip:tls.voicetel.com`,
+							registrar: `sip:${SIP_DOMAIN}`,
 							expires: SIP_REGISTRATION_EXPIRES_SEC,
 						},
 						sessionDescriptionHandlerFactoryOptions: {
@@ -1189,6 +1191,7 @@
 						hackWssInTransport: false,
 						hackIpInContact: true,
 						dtmfType: "rtp",
+						userAgentString: `VoiceTel/${APP_VERSION}`,
 					};
 
 					userAgent = new SIP.UA(userAgentOptions);
@@ -1338,7 +1341,7 @@
 					const hideCallerID =
 						document.getElementById("hideCallerID").checked;
 
-					const domain = "tls.voicetel.com";
+					const domain = SIP_DOMAIN;
 					const uri = `sip:${number}@${domain}`;
 
 					const options = {
@@ -1355,12 +1358,12 @@
 					let pAssertedIdentity;
 					if (callerID && validateNorthAmericanNumber(callerID)) {
 						const formattedNumber = "+1" + callerID;
-						pAssertedIdentity = `"${displayName}" <sip:${formattedNumber}@tls.voicetel.com>`;
+						pAssertedIdentity = `"${displayName}" <sip:${formattedNumber}@${SIP_DOMAIN}>`;
 						log(
 							`Setting caller ID: ${displayName} ${formattedNumber}`,
 						);
 					} else {
-						pAssertedIdentity = `"${displayName}" <sip:${registeredUsername}@tls.voicetel.com>`;
+						pAssertedIdentity = `"${displayName}" <sip:${registeredUsername}@${SIP_DOMAIN}>`;
 						log(
 							`Using default caller ID: ${displayName} ${registeredUsername}`,
 						);
@@ -1649,9 +1652,11 @@
 
 			function setupSessionHandlers(session) {
 				let ringingStarted = false;
+				console.log("Setting up session handlers, session.on exists:", !!session.on);
 
 				if (session.on) {
 					session.on("response", (response) => {
+						console.log("Session response event:", response?.status_code, response?.reason_phrase);
 						if (
 							response &&
 							response.status_code &&
@@ -1671,16 +1676,19 @@
 							}
 
 							if (response.status_code === 200) {
+								console.log("Got 200 OK response - call should be accepted!");
 								if (ringingStarted) {
 									stopRinging();
 									ringingStarted = false;
 								}
+								// Start timer immediately when we get 200 OK
+								console.log("Starting timer from 200 OK response");
+								startCallTimer();
 							}
 						}
 					});
-				}
 
-				session.on("progress", (response) => {
+					session.on("progress", (response) => {
 					if (
 						response &&
 						response.status_code &&
@@ -1780,23 +1788,24 @@
 					endCall();
 				});
 
-				session.on("accepted", (response) => {
-					if (
-						response &&
-						response.status_code &&
-						response.reason_phrase
-					) {
-						log(
-							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-						);
-					}
+					session.on("accepted", (response) => {
+						console.log("Session accepted event fired!");
+						if (
+							response &&
+							response.status_code &&
+							response.reason_phrase
+						) {
+							log(
+								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+							);
+						}
 
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
+						if (ringingStarted) {
+							stopRinging();
+							ringingStarted = false;
+						}
 
-					log("Call connected");
+						log("Call connected");
 
 					if (
 						currentSession &&
@@ -1823,6 +1832,7 @@
 						"Type or press dialpad for DTMF";
 					document.getElementById("callNumber").focus();
 
+					console.log("About to start call timer...");
 					startCallTimer();
 
 					try {
@@ -1868,6 +1878,7 @@
 						log("Error handling track: " + e.message);
 					}
 				});
+				}
 			}
 
 			function hangup() {
@@ -1984,8 +1995,10 @@
 			}
 
 			function startCallTimer() {
+				console.log("startCallTimer called");
 				callStartTime = Date.now();
 				callTimer = setInterval(updateCallDuration, 1000);
+				console.log("Timer started, callStartTime:", callStartTime, "callTimer:", callTimer);
 			}
 
 			function stopCallTimer() {
@@ -1997,7 +2010,10 @@
 			}
 
 			function updateCallDuration() {
-				if (!callStartTime) return;
+				if (!callStartTime) {
+					console.log("updateCallDuration: callStartTime is null");
+					return;
+				}
 
 				const duration = Math.floor(
 					(Date.now() - callStartTime) / 1000,
@@ -2005,6 +2021,7 @@
 				const minutes = Math.floor(duration / 60);
 				const seconds = duration % 60;
 
+				console.log("Updating call duration:", duration, "seconds");
 				document.getElementById("callDuration").textContent =
 					`${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 			}
@@ -2205,6 +2222,21 @@
 
 			// Initialize on DOM load
 			window.addEventListener("DOMContentLoaded", async function () {
+				// Update page title with version
+				document.title = `VoiceTel Phone v${APP_VERSION}`;
+				
+				// Set SIP server from configuration
+				const sipServerEl = document.getElementById("sipServer");
+				if (sipServerEl) {
+					sipServerEl.value = SIP_SERVER;
+				}
+				
+				// Update server info display
+				const serverInfoEl = document.getElementById("serverInfo");
+				if (serverInfoEl) {
+					serverInfoEl.textContent = `WebSocket: ${SIP_SERVER} | SIP Domain: ${SIP_DOMAIN}`;
+				}
+				
 				if (typeof SIP === "undefined") {
 					console.error("SIP.js library failed to load");
 					log("Error: SIP.js library not loaded");
@@ -2214,10 +2246,10 @@
 					return;
 				}
 
-				log("VoiceTel Phone v3.5.4 ready");
+				log(`VoiceTel Phone v${APP_VERSION} ready`);
 				log("Using local storage");
 				log("SIP.js " + (SIP.version || "0.15.x") + " loaded");
-				log("Server: tls.voicetel.com (wss://443)");
+				log(`Server: ${SIP_DOMAIN} (${SIP_SERVER})`);
 
 				// Load saved configuration
 				await Storage.loadConfig();
