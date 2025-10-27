@@ -130,6 +130,10 @@
 				margin-bottom: 25px;
 			}
 
+			#callSection.visible {
+				display: block;
+			}
+
 			#historySection .log {
 				padding: 20px;
 				max-height: 260px;
@@ -436,8 +440,10 @@
 			</div>
 
 			<div class="content">
-				<div class="section hideable" id="registerSection">
-					<div class="button-group">
+				<div class="section config-section" id="configSection">
+					<h2>Settings</h2>
+					
+					<div class="button-group" style="margin-bottom: 25px;">
 						<button
 							id="registerBtn"
 							class="btn-primary"
@@ -454,10 +460,6 @@
 							Unregister
 						</button>
 					</div>
-				</div>
-
-				<div class="section config-section" id="configSection">
-					<h2>SIP Configuration</h2>
 					<input
 						type="hidden"
 						id="sipServer"
@@ -2088,7 +2090,6 @@
 			// View management
 			function setView(view) {
 				const sections = {
-					register: document.getElementById("registerSection"),
 					call: document.getElementById("callSection"),
 					config: document.getElementById("configSection"),
 					log: document.getElementById("logSection"),
@@ -2105,8 +2106,8 @@
 
 				// Show requested view
 				if (view === "phone") {
-					sections.register.classList.remove("hidden");
 					sections.call.classList.remove("hidden");
+					sections.call.classList.add("visible");
 				} else if (view === "settings") {
 					sections.config.classList.add("visible");
 					sections.config.classList.remove("hidden");
