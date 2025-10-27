@@ -140,6 +140,27 @@
 				border-radius: 12px;
 			}
 
+			.contact-item {
+				padding: 16px 20px;
+				border-bottom: 1px solid #f0f0f0;
+				cursor: pointer;
+				transition: all 0.2s ease;
+				background: white;
+			}
+
+			.contact-item:hover {
+				background-color: #f8f9fa;
+				transform: translateX(2px);
+			}
+
+			.contact-item:last-child {
+				border-bottom: none;
+			}
+
+			.contact-item:active {
+				background-color: #e9ecef;
+			}
+
 			#historySection .log-entry {
 				display: flex;
 				justify-content: space-between;
@@ -2143,30 +2164,99 @@
 				const history = await Storage.getHistory();
 
 				if (history.length === 0) {
-					el.innerHTML =
-						'<div style="text-align:center;color:#999">No call history yet</div>';
+					el.innerHTML = `
+						<div class="contact-item" style="text-align: center; padding: 20px; color: #666;">
+							<p style="font-size: 14px;">No call history yet</p>
+						</div>
+					`;
 					return;
 				}
 
-				el.innerHTML = "";
-				history.forEach((item) => {
+				el.innerHTML = '';
+				history.forEach((item, index) => {
 					let icon = "❓"; // Default for unknown
+					let callType = "Unknown";
 
 					if (item.type === "incoming") {
 						icon = "⬇️"; // Incoming answered call
+						callType = "Incoming";
 					} else if (item.type === "outgoing") {
 						icon = "⬆️"; // Outgoing call
+						callType = "Outgoing";
 					} else if (item.type === "missed") {
 						icon = "🔴"; // Missed call (rang but not answered)
+						callType = "Missed";
 					} else if (item.type === "declined") {
 						icon = "⛔"; // Declined call (explicitly rejected)
+						callType = "Declined";
 					}
 
-					const row = document.createElement("div");
-					row.className = "log-entry";
+					// Format phone number consistently
+					let displayNumber = item.number;
+					const cleanNumber = item.number.replace(/\D/g, '');
+					
+					if (cleanNumber.length === 10) {
+						// US format: (555) 123-4567
+						displayNumber = `(${cleanNumber.slice(0,3)}) ${cleanNumber.slice(3,6)}-${cleanNumber.slice(6)}`;
+					} else if (cleanNumber.length === 11 && cleanNumber.startsWith('1')) {
+						// 11 digits starting with 1: show as 10-digit format (555) 123-4567
+						displayNumber = `(${cleanNumber.slice(1,4)}) ${cleanNumber.slice(4,7)}-${cleanNumber.slice(7)}`;
+					} else if (cleanNumber.length === 7) {
+						// Local format: 123-4567
+						displayNumber = `${cleanNumber.slice(0,3)}-${cleanNumber.slice(3)}`;
+					} else if (cleanNumber.length > 11) {
+						// International format: +XX XXX XXX XXXX
+						const countryCode = cleanNumber.slice(0, cleanNumber.length - 10);
+						const areaCode = cleanNumber.slice(cleanNumber.length - 10, cleanNumber.length - 7);
+						const firstPart = cleanNumber.slice(cleanNumber.length - 7, cleanNumber.length - 4);
+						const lastPart = cleanNumber.slice(cleanNumber.length - 4);
+						displayNumber = `+${countryCode} ${areaCode} ${firstPart} ${lastPart}`;
+					}
+
 					const timestamp = new Date(item.timestamp).toLocaleString();
-					row.innerHTML = `${icon} <a href="#" class="history-call" onclick="return redial('${item.number}')"><strong>${item.number}</strong></a> - ${item.duration}<br><small>${timestamp}</small>`;
-					el.appendChild(row);
+					const safeNumber = cleanNumber.replace(/'/g, "\\'").replace(/"/g, '\\"');
+					
+					const historyDiv = document.createElement('div');
+					historyDiv.className = 'contact-item';
+					historyDiv.style.cssText = `
+						padding: 16px 20px;
+						border-bottom: 1px solid #f0f0f0;
+						cursor: pointer;
+						transition: all 0.2s ease;
+						background: white;
+					`;
+					
+					// Create the history display HTML
+					const historyHTML = `
+						<div style="padding: 6px 0;">
+							<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+								<span style="font-size: 18px;">${icon}</span>
+								<div style="flex: 1;">
+									<button onclick="redial('${safeNumber}')" 
+										style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-family: monospace; font-size: 12px; padding: 0; text-align: left; font-weight: 600;">
+										${displayNumber}
+									</button>
+									<div style="font-size: 10px; color: #888; text-transform: capitalize; margin-top: 2px;">
+										${callType.toLowerCase()}
+									</div>
+								</div>
+							</div>
+							<div style="font-size: 10px; color: #666; margin-left: 30px;">
+								${timestamp}
+							</div>
+						</div>
+					`;
+					
+					historyDiv.innerHTML = historyHTML;
+					
+					historyDiv.addEventListener('mouseenter', () => {
+						historyDiv.style.backgroundColor = '#f5f5f5';
+					});
+					historyDiv.addEventListener('mouseleave', () => {
+						historyDiv.style.backgroundColor = 'transparent';
+					});
+					
+					el.appendChild(historyDiv);
 				});
 			}
 
