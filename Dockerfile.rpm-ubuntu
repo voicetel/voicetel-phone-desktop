@@ -1,0 +1,46 @@
+# Alternative Dockerfile for building RPM packages using Ubuntu + Alien
+FROM ubuntu:22.04
+
+# Install required packages
+RUN apt-get update && \
+    apt-get install -y \
+    alien \
+    fakeroot \
+    git \
+    nodejs \
+    npm \
+    gtk3 \
+    libnotify4 \
+    libnss3 \
+    libxss1 \
+    libxtst6 \
+    xdg-utils \
+    libatspi2.0-0 \
+    uuid-runtime \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY main.js ./
+COPY index.html ./
+COPY build/ ./build/
+
+# Install dependencies
+RUN npm install
+
+# Install electron-builder globally
+RUN npm install -g electron-builder
+
+# Build DEB package first
+RUN npm run build:linux-norpm
+
+# Convert DEB to RPM using alien
+RUN cd dist && \
+    alien --to-rpm --scripts voicetel-phone_3.5.5_amd64.deb
+
+# The RPM will be in /app/dist/
+CMD ["ls", "-la", "/app/dist/"]
