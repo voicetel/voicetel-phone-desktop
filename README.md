@@ -2,7 +2,7 @@
 
 A cross-platform WebRTC SIP phone built with Electron for VoiceTel communications. Make and receive calls directly from your desktop with a modern, intuitive interface.
 
-![Version](https://img.shields.io/badge/version-3.4.0-blue)
+![Version](https://img.shields.io/badge/version-3.5.5-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
@@ -38,36 +38,83 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **30-Second Timeout** - Auto-decline unanswered incoming calls
 - **Automatic DTMF** - RFC 2833 telephone-event with SIP INFO fallback
 - **WebRTC Diagnostics** - Built-in troubleshooting tips for media negotiation issues
+- **Call History** - Track incoming, outgoing, missed, and declined calls with timestamps
+- **Redial Functionality** - Quick redial from call history with formatted phone numbers
 
 ## 🚀 Installation
 
 ### Download Pre-built Binaries
-Download the latest release for your platform from the [Releases](https://github.com/voicetel/voicetel-phone/releases).
+Download the latest release for your platform from the [Releases](https://github.com/voicetel/voicetel-phone-desktop/releases).
+
+**Available Packages:**
+- **Windows**: NSIS Installer, MSI Installer, Portable Executable
+- **macOS**: DMG, ZIP
+- **Linux**: AppImage, DEB, RPM
 
 ### Build from Source
 
 #### Prerequisites
 - Node.js 16+ and npm
 - Git
+- Docker (for cross-platform builds)
 
-#### Steps
+#### Quick Start
 ```bash
 # Clone the repository
-git clone https://github.com/voicetel/voicetel-phone.git
-cd voicetel-phone
+git clone https://github.com/voicetel/voicetel-phone-desktop.git
+cd voicetel-phone-desktop
 
 # Install dependencies
 npm install
 
 # Run in development mode
 npm start
+```
 
-# Build for your platform
+#### Build Commands
+
+**Native Builds (Current Platform):**
+```bash
 npm run build              # Current platform
 npm run build:mac          # macOS only
-npm run build:win          # Windows only
-npm run build:linux        # Linux only
+npm run build:win          # Windows only (NSIS + MSI + Portable)
+npm run build:linux        # Linux only (AppImage + DEB + RPM)
 npm run build:all          # All platforms
+```
+
+**Individual Windows Packages:**
+```bash
+npm run build:win-msi      # MSI installer only
+npm run build:win-nsis     # NSIS installer only
+npm run build:win-portable # Portable executable only
+```
+
+**Docker Builds (Cross-Platform):**
+```bash
+# Build RPM package using Docker
+npm run build:rpm-docker
+
+# Build Windows packages using Docker
+npm run build:windows-docker
+
+# Build all packages using Docker
+npm run build:all-docker
+
+# Or use the Docker script directly
+./docker-build.sh rpm      # RPM only
+./docker-build.sh windows  # Windows packages
+./docker-build.sh all      # All packages
+```
+
+#### Docker Requirements
+For cross-platform builds, ensure Docker is installed and running:
+```bash
+# Start Docker service
+sudo systemctl start docker
+
+# Add user to docker group (optional)
+sudo usermod -aG docker $USER
+```
 
 ## 🙌 Contributors
 
