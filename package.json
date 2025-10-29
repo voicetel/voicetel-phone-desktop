@@ -20,9 +20,6 @@
 		"build:rpm": "electron-builder --linux rpm",
 		"build:rpm-docker": "./docker-build.sh rpm",
 		"build:windows-docker": "./docker-build.sh windows",
-		"build:msi-docker": "./build-msi.sh",
-		"build:msi-try": "./build-msi-try.sh",
-		"build:msi-advanced": "./build-msi-advanced.sh",
 		"build:all-docker": "./docker-build.sh all",
 		"build:all": "electron-builder -mwl"
 	},
@@ -88,14 +85,6 @@
 			"createStartMenuShortcut": true,
 			"shortcutName": "VoiceTel",
 			"artifactName": "${productName}-${version}-Setup.${ext}"
-		},
-		"msi": {
-			"oneClick": false,
-			"perMachine": false,
-			"createDesktopShortcut": true,
-			"createStartMenuShortcut": true,
-			"shortcutName": "VoiceTel",
-			"artifactName": "${productName}-${version}.${ext}"
 		},
 		"linux": {
 			"icon": "build/icons",
