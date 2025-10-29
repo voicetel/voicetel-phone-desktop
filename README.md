@@ -6,6 +6,16 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
+## 📚 Table of Contents
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Screenshots](#-screenshots)
+- [Privacy](#-privacy)
+- [Contributors](#-contributors)
+- [Sponsors](#-sponsors)
+- [License](#-license)
+
 ## ✨ Features
 
 ### 📞 Core Telephony
@@ -14,6 +24,7 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **Incoming Calls** - Visual call notifications with caller ID display
 - **Call Controls** - Mute, hang up, call duration timer
 - **DTMF Support** - Send touch-tone digits during calls via dialpad or keyboard
+- **Ringing Handling** - Local ringback on 180/183; early media muted until answer
 
 ### 🔐 Security & Privacy
 - **Local Storage** - Credentials stored locally using browser storage
@@ -21,10 +32,10 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **No External Dependencies** - All data processing happens locally
 
 ### 🎨 User Interface
-- **Three-Panel Design**
-  - 📞 Phone - Main dialing and call interface
-  - 📋 Event Log - Real-time SIP message logging
-  - ⚙️ Settings - SIP configuration and credentials
+- **Desktop-First Design**
+  - 📞 Phone - Main dialing and call interface with large buttons
+  - 📋 Event Log - Real-time SIP message logging and debugging
+  - ⚙️ Settings - SIP configuration and credentials management
 - **Visual Call Indicators** - Ringing animation, call status, duration display
 - **Desktop Notifications** - System notifications for incoming calls
 - **Keyboard Shortcuts**
@@ -116,6 +127,22 @@ sudo systemctl start docker
 sudo usermod -aG docker $USER
 ```
 
+## 🖥️ Screenshots
+
+<p align="center">
+  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/desktop_main.png" alt="Desktop — Main Interface" width="400" />
+  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/desktop_call.png" alt="Desktop — Active Call" width="400" />
+</p>
+
+<p align="center">
+  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/desktop_settings.png" alt="Desktop — Settings" width="400" />
+  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/desktop_history.png" alt="Desktop — Call History" width="400" />
+</p>
+
+## 🔒 Privacy
+
+All SIP signaling and media negotiation occur directly between your device and your SIP server. No analytics or third‑party tracking are embedded. Credentials are stored locally on the device.
+
 ## 🙌 Contributors
 
 We welcome contributions! Thanks to these awesome people:
@@ -133,3 +160,7 @@ Proudly supported by:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+Changelog and releases are available on the [Releases](https://github.com/voicetel/voicetel-phone-desktop/releases) page.
