@@ -15,6 +15,9 @@
 		"build": "electron-builder",
 		"build:mac": "electron-builder --mac",
 		"build:win": "electron-builder --win",
+		"build:win-msi": "electron-builder --win msi",
+		"build:win-nsis": "electron-builder --win nsis",
+		"build:win-portable": "electron-builder --win portable",
 		"build:linux": "electron-builder --linux",
 		"build:linux-norpm": "electron-builder --linux --config.linux.target=AppImage,deb",
 		"build:rpm": "electron-builder --linux rpm",
@@ -71,6 +74,13 @@
 					]
 				},
 				{
+					"target": "msi",
+					"arch": [
+						"x64",
+						"ia32"
+					]
+				},
+				{
 					"target": "portable",
 					"arch": [
 						"x64"
@@ -85,6 +95,14 @@
 			"createStartMenuShortcut": true,
 			"shortcutName": "VoiceTel",
 			"artifactName": "${productName}-${version}-Setup.${ext}"
+		},
+		"msi": {
+			"oneClick": false,
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true,
+			"shortcutName": "VoiceTel",
+			"artifactName": "${productName}-${version}-Installer.${ext}",
+			"upgradeCode": "12345678-1234-1234-1234-123456789012"
 		},
 		"linux": {
 			"icon": "build/icons",

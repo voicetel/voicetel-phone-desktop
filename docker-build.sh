@@ -98,19 +98,20 @@ build_windows() {
         docker run --rm \
             -v "$(pwd)/dist:/output" \
             voicetel-windows-builder sh -c "
-                cp /app/dist/*.exe /output/ 2>/dev/null || echo 'No Windows packages found'
+                cp /app/dist/*.exe /output/ 2>/dev/null || echo 'No Windows packages found' &&
+                cp /app/dist/*.msi /output/ 2>/dev/null || echo 'No MSI packages found'
             "
     fi
     
     # Check results
-    if ls dist/*.exe 2>/dev/null; then
+    if ls dist/*.exe dist/*.msi 2>/dev/null; then
         echo -e "${GREEN}✅ Windows packages built successfully!${NC}"
         echo -e "${BLUE}📁 Windows packages in dist/:${NC}"
-        ls -lh dist/*.exe 2>/dev/null || echo "No Windows packages found"
+        ls -lh dist/*.exe dist/*.msi 2>/dev/null || echo "No Windows packages found"
     else
         echo -e "${RED}❌ Windows packages not found.${NC}"
         echo "Checking for any Windows files..."
-        ls -la dist/*.exe 2>/dev/null || echo "No Windows packages found in dist/"
+        ls -la dist/*.exe dist/*.msi 2>/dev/null || echo "No Windows packages found in dist/"
         return 1
     fi
 }
@@ -170,7 +171,7 @@ case "${1:-rpm}" in
         echo ""
         echo "Commands:"
         echo "  rpm      - Build only RPM package using Docker (default)"
-        echo "  windows  - Build Windows packages using Docker"
+        echo "  windows  - Build Windows packages (NSIS, MSI, Portable) using Docker"
         echo "  all      - Build all packages (AppImage, DEB, RPM) using Docker"
         echo "  clean    - Clean up Docker images"
         echo "  help     - Show this help message"
@@ -183,8 +184,11 @@ case "${1:-rpm}" in
         echo ""
         echo "NPM Scripts:"
         echo "  npm run build:rpm-docker     - Build RPM using Docker"
-        echo "  npm run build:windows-docker - Build Windows using Docker"
+        echo "  npm run build:windows-docker - Build Windows (NSIS, MSI, Portable) using Docker"
         echo "  npm run build:all-docker     - Build all packages using Docker"
+        echo "  npm run build:win-msi        - Build MSI installer only"
+        echo "  npm run build:win-nsis       - Build NSIS installer only"
+        echo "  npm run build:win-portable   - Build portable executable only"
         ;;
     *)
         echo -e "${RED}❌ Unknown command: $1${NC}"
