@@ -83,8 +83,8 @@ build_windows() {
             echo -e "${GREEN}✅ Pre-built approach build successful${NC}"
             DOCKERFILE="Dockerfile.windows-prebuilt"
         else
-            echo -e "${RED}❌ All Windows build approaches failed!${NC}"
-            return 1
+        echo -e "${RED}❌ All Windows build approaches failed!${NC}"
+        return 1
         fi
     fi
     
@@ -99,19 +99,18 @@ build_windows() {
             -v "$(pwd)/dist:/output" \
             voicetel-windows-builder sh -c "
                 cp /app/dist/*.exe /output/ 2>/dev/null || echo 'No Windows packages found'
-                cp /app/dist/*.msi /output/ 2>/dev/null || echo 'No MSI packages found'
             "
     fi
     
     # Check results
-    if ls dist/*.exe dist/*.msi 2>/dev/null; then
+    if ls dist/*.exe 2>/dev/null; then
         echo -e "${GREEN}✅ Windows packages built successfully!${NC}"
         echo -e "${BLUE}📁 Windows packages in dist/:${NC}"
-        ls -lh dist/*.exe dist/*.msi 2>/dev/null || echo "No Windows packages found"
+        ls -lh dist/*.exe 2>/dev/null || echo "No Windows packages found"
     else
         echo -e "${RED}❌ Windows packages not found.${NC}"
         echo "Checking for any Windows files..."
-        ls -la dist/*.exe dist/*.msi 2>/dev/null || echo "No Windows packages found in dist/"
+        ls -la dist/*.exe 2>/dev/null || echo "No Windows packages found in dist/"
         return 1
     fi
 }
