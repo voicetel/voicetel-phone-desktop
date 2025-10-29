@@ -130,13 +130,9 @@ sudo usermod -aG docker $USER
 ## 🖥️ Screenshots
 
 <p align="center">
-  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/desktop_main.png" alt="Desktop — Main Interface" width="400" />
-  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/desktop_call.png" alt="Desktop — Active Call" width="400" />
-</p>
-
-<p align="center">
-  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/desktop_settings.png" alt="Desktop — Settings" width="400" />
-  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/desktop_history.png" alt="Desktop — Call History" width="400" />
+  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/linux_dialer.png" alt="Desktop — Dialer Interface" width="270" />
+  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/linux_event-log.png" alt="Desktop — Event Log" width="270" />
+  <img src="https://voicetel-phone.s3.us-east-1.amazonaws.com/images/linux_settings.png" alt="Desktop — Settings" width="270" />
 </p>
 
 ## 🔒 Privacy
