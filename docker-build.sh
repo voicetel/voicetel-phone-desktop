@@ -68,9 +68,57 @@ build_rpm() {
     fi
 }
 
+# Function to build Windows packages
+build_windows() {
+    echo -e "${YELLOW}📦 Building Windows packages...${NC}"
+    
+    # Try direct approach first (most reliable, no permission issues)
+    echo "🔨 Building Docker image for Windows (direct approach)..."
+    if docker build -f Dockerfile.windows-direct -t voicetel-windows-builder . 2>/dev/null; then
+        echo -e "${GREEN}✅ Direct approach build successful${NC}"
+        DOCKERFILE="Dockerfile.windows-direct"
+    else
+        echo -e "${YELLOW}⚠️  Direct approach failed, trying pre-built approach...${NC}"
+        if docker build -f Dockerfile.windows-prebuilt -t voicetel-windows-builder . 2>/dev/null; then
+            echo -e "${GREEN}✅ Pre-built approach build successful${NC}"
+            DOCKERFILE="Dockerfile.windows-prebuilt"
+        else
+            echo -e "${RED}❌ All Windows build approaches failed!${NC}"
+            return 1
+        fi
+    fi
+    
+    # Create output directory
+    mkdir -p dist
+    
+    # Run the container and build Windows packages
+    echo "🚀 Running Windows build in container..."
+    if [ "$DOCKERFILE" = "Dockerfile.windows-direct" ] || [ "$DOCKERFILE" = "Dockerfile.windows-prebuilt" ]; then
+        # For root/copy approaches, just run the container and copy files out
+        docker run --rm \
+            -v "$(pwd)/dist:/output" \
+            voicetel-windows-builder sh -c "
+                cp /app/dist/*.exe /output/ 2>/dev/null || echo 'No Windows packages found'
+                cp /app/dist/*.msi /output/ 2>/dev/null || echo 'No MSI packages found'
+            "
+    fi
+    
+    # Check results
+    if ls dist/*.exe dist/*.msi 2>/dev/null; then
+        echo -e "${GREEN}✅ Windows packages built successfully!${NC}"
+        echo -e "${BLUE}📁 Windows packages in dist/:${NC}"
+        ls -lh dist/*.exe dist/*.msi 2>/dev/null || echo "No Windows packages found"
+    else
+        echo -e "${RED}❌ Windows packages not found.${NC}"
+        echo "Checking for any Windows files..."
+        ls -la dist/*.exe dist/*.msi 2>/dev/null || echo "No Windows packages found in dist/"
+        return 1
+    fi
+}
+
 # Function to build all packages
 build_all() {
-    echo -e "${YELLOW}📦 Building all packages (AppImage, DEB, RPM)...${NC}"
+    echo -e "${YELLOW}📦 Building all packages (AppImage, DEB, RPM, Windows)...${NC}"
     
     # Build the Docker image
     echo "🔨 Building Docker image for all packages..."
@@ -109,6 +157,9 @@ case "${1:-rpm}" in
     "rpm")
         build_rpm
         ;;
+    "windows")
+        build_windows
+        ;;
     "all")
         build_all
         ;;
@@ -116,21 +167,25 @@ case "${1:-rpm}" in
         cleanup
         ;;
     "help"|"-h"|"--help")
-        echo "Usage: $0 [rpm|all|clean|help]"
+        echo "Usage: $0 [rpm|windows|all|clean|help]"
         echo ""
         echo "Commands:"
-        echo "  rpm   - Build only RPM package using Docker (default)"
-        echo "  all   - Build all packages (AppImage, DEB, RPM) using Docker"
-        echo "  clean - Clean up Docker images"
-        echo "  help  - Show this help message"
+        echo "  rpm      - Build only RPM package using Docker (default)"
+        echo "  windows  - Build Windows packages using Docker"
+        echo "  all      - Build all packages (AppImage, DEB, RPM) using Docker"
+        echo "  clean    - Clean up Docker images"
+        echo "  help     - Show this help message"
         echo ""
         echo "Docker Approaches:"
         echo "  - Fedora-based: Uses native rpmbuild (Dockerfile.rpm)"
         echo "  - Ubuntu+Alien: Converts DEB to RPM (Dockerfile.rpm-ubuntu)"
+        echo "  - Direct: Windows builds with Wine (Dockerfile.windows-direct)"
+        echo "  - Pre-built: Windows builds with better caching (Dockerfile.windows-prebuilt)"
         echo ""
         echo "NPM Scripts:"
-        echo "  npm run build:rpm-docker  - Build RPM using Docker"
-        echo "  npm run build:all-docker - Build all packages using Docker"
+        echo "  npm run build:rpm-docker     - Build RPM using Docker"
+        echo "  npm run build:windows-docker - Build Windows using Docker"
+        echo "  npm run build:all-docker     - Build all packages using Docker"
         ;;
     *)
         echo -e "${RED}❌ Unknown command: $1${NC}"

@@ -19,6 +19,7 @@
 		"build:linux-norpm": "electron-builder --linux --config.linux.target=AppImage,deb",
 		"build:rpm": "electron-builder --linux rpm",
 		"build:rpm-docker": "./docker-build.sh rpm",
+		"build:windows-docker": "./docker-build.sh windows",
 		"build:all-docker": "./docker-build.sh all",
 		"build:all": "electron-builder -mwl"
 	},
@@ -60,6 +61,7 @@
 		},
 		"win": {
 			"icon": "build/icon.ico",
+			"artifactName": "${productName}-${version}.${ext}",
 			"target": [
 				{
 					"target": "nsis",
@@ -81,7 +83,8 @@
 			"allowToChangeInstallationDirectory": true,
 			"createDesktopShortcut": true,
 			"createStartMenuShortcut": true,
-			"shortcutName": "VoiceTel"
+			"shortcutName": "VoiceTel",
+			"artifactName": "${productName}-${version}-Setup.${ext}"
 		},
 		"linux": {
 			"icon": "build/icons",

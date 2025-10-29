@@ -1,0 +1,43 @@
+# Pre-built approach - use a base image with everything already installed
+FROM node:18-bullseye
+
+# Install everything we need
+RUN dpkg --add-architecture i386 && \
+    apt-get update && \
+    apt-get install -y \
+    apt-utils \
+    wine \
+    wine32 \
+    wine64 \
+    xvfb \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up Wine
+ENV WINEPREFIX=/root/.wine
+ENV WINEARCH=win64
+ENV DISPLAY=:99
+
+# Initialize Wine
+RUN winecfg
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the source code
+COPY . .
+
+# Build Windows packages
+RUN npm run build:win
+
+# Show what was created
+RUN ls -la /app/dist/
+
+# The Windows packages will be in /app/dist/
+CMD ["ls", "-la", "/app/dist/"]
