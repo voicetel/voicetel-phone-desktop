@@ -1,5 +1,7 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
+const fs = require("fs");
+const os = require("os");
 const packageJson = require("./package.json");
 
 // App version and configuration from package.json
@@ -19,7 +21,7 @@ app.commandLine.appendSwitch("auto-select-desktop-capture-source", "VoiceTel");
 // Disable sandbox only if absolutely necessary for media access
 // Remove these if you have proper permissions configured
 if (process.env.ELECTRON_DISABLE_SANDBOX === "1") {
-	console.log("⚠️  Running without sandbox (ELECTRON_DISABLE_SANDBOX=1)");
+	console.log("Running without sandbox (ELECTRON_DISABLE_SANDBOX=1)");
 	app.commandLine.appendSwitch("no-sandbox");
 	app.commandLine.appendSwitch("disable-setuid-sandbox");
 }
@@ -33,12 +35,6 @@ if (process.platform === "linux") {
 
 // Register before app is ready
 app.whenReady().then(() => {
-	console.log("Electron app ready, creating window...");
-	console.log("App version:", APP_VERSION);
-	console.log("SIP Domain:", SIP_DOMAIN);
-	console.log("SIP Server:", SIP_SERVER);
-	console.log("Electron version:", process.versions.electron);
-	console.log("Chrome version:", process.versions.chrome);
 
 	createWindow();
 
@@ -52,6 +48,14 @@ app.whenReady().then(() => {
 function createWindow() {
 	const iconPath = getIconPath();
 
+	// Get preload script path - __dirname works in both dev and packaged modes
+	const preloadPath = path.join(__dirname, 'preload.js');
+	
+	// Verify preload file exists
+	if (!fs.existsSync(preloadPath)) {
+		console.error(`Preload script not found at: ${preloadPath}`);
+	}
+	
 	mainWindow = new BrowserWindow({
 		width: 600,
 		height: 1000,
@@ -60,6 +64,7 @@ function createWindow() {
 		webPreferences: {
 			nodeIntegration: false,
 			contextIsolation: true,
+			preload: preloadPath,
 			// Enable web security but allow media access
 			webSecurity: true,
 			allowRunningInsecureContent: false,
@@ -79,7 +84,18 @@ function createWindow() {
 
 	mainWindow.once("ready-to-show", () => {
 		mainWindow.show();
-		console.log("✓ Window shown");
+		
+		// Open DevTools in development, or allow toggling with F12
+		if (!app.isPackaged) {
+			mainWindow.webContents.openDevTools();
+		}
+	});
+	
+	// Toggle DevTools with F12 (works in both dev and production)
+	mainWindow.webContents.on('before-input-event', (event, input) => {
+		if (input.key === 'F12' || (input.key === 'I' && input.control && input.shift)) {
+			mainWindow.webContents.toggleDevTools();
+		}
 	});
 
 	// Load file directly for stable origin
@@ -92,6 +108,7 @@ function createWindow() {
 			window.VOICETEL_SIP_DOMAIN = "${SIP_DOMAIN}";
 			window.VOICETEL_SIP_SERVER = "${SIP_SERVER}";
 		`);
+		
 	});
 	
 	mainWindow.loadFile(indexPath);
@@ -108,7 +125,6 @@ function createWindow() {
 
 	// Auto-grant media permissions - critical for WebRTC
 	session.setPermissionRequestHandler((webContents, permission, callback) => {
-		console.log(`Permission requested: ${permission}`);
 		const allowedPermissions = [
 			"media",
 			"mediaKeySystem",
@@ -123,10 +139,8 @@ function createWindow() {
 		];
 
 		if (allowedPermissions.includes(permission)) {
-			console.log(`✓ Granted: ${permission}`);
 			callback(true);
 		} else {
-			console.log(`✗ Denied: ${permission}`);
 			callback(false);
 		}
 	});
@@ -141,19 +155,17 @@ function createWindow() {
 		},
 	);
 
-	// Log storage path for debugging
-	const storagePath = session.getStoragePath();
-	console.log("📁 Session storage path:", storagePath);
-	console.log("📄 Loading file:", indexPath);
-	console.log("🖼️  Icon path:", iconPath);
 
-	// Enhanced console logging
+	// Forward console messages from renderer (errors and warnings only)
 	mainWindow.webContents.on(
 		"console-message",
 		(event, level, message, line, sourceId) => {
-			const levelMap = { 0: "INFO", 1: "WARN", 2: "ERROR" };
-			const prefix = levelMap[level] || "LOG";
-			console.log(`[${prefix}] ${message}`);
+			// Only log warnings and errors, not info messages
+			if (level >= 1) {
+				const levelMap = { 1: "WARN", 2: "ERROR" };
+				const prefix = levelMap[level] || "LOG";
+				console.log(`[${prefix}] ${message}`);
+			}
 		},
 	);
 
@@ -161,14 +173,12 @@ function createWindow() {
 	mainWindow.webContents.on(
 		"did-fail-load",
 		(event, errorCode, errorDescription) => {
-			console.error("❌ Failed to load:", errorCode, errorDescription);
+			console.error("Failed to load:", errorCode, errorDescription);
 		},
 	);
 
 	// Check media devices on load
 	mainWindow.webContents.on("did-finish-load", async () => {
-		console.log("✓ Page loaded successfully");
-
 		// Inject media device check
 		try {
 			const devices = await mainWindow.webContents.executeJavaScript(`
@@ -179,16 +189,12 @@ function createWindow() {
 			`);
 
 			if (devices.error) {
-				console.error("❌ Media device error:", devices.error);
-			} else {
-				console.log(
-					`🎤 Found ${devices.count} microphone(s):`,
-					devices.devices,
-				);
+				console.error("Media device error:", devices.error);
 			}
 		} catch (error) {
-			console.error("❌ Could not check media devices:", error);
+			console.error("Could not check media devices:", error);
 		}
+
 	});
 
 	// Handle navigation
@@ -196,7 +202,17 @@ function createWindow() {
 		// Only allow navigation to external links, not navigation away from app
 		if (!url.startsWith("file://")) {
 			event.preventDefault();
-			console.log("Blocked navigation to:", url);
+		}
+	});
+	
+	// Intercept download attempts to prevent audio blob downloads
+	mainWindow.webContents.session.on("will-download", (event, item, webContents) => {
+		const url = item.getURL();
+		const filename = item.getFilename();
+		
+		// If it's a blob URL for audio, cancel it
+		if (url.startsWith("blob:") && (filename.endsWith('.webm') || filename.endsWith('.wav') || filename.endsWith('.mp3') || filename.endsWith('.ogg'))) {
+			item.cancel();
 		}
 	});
 }
@@ -238,4 +254,157 @@ process.on("uncaughtException", (error) => {
 
 process.on("unhandledRejection", (reason, promise) => {
 	console.error("Unhandled rejection at:", promise, "reason:", reason);
+});
+
+// Recording handlers
+async function handleSaveRecording(data) {
+	try {
+		const { filename, data: base64Data, mimeType } = data;
+		
+		// Convert base64 to buffer
+		const buffer = Buffer.from(base64Data, 'base64');
+		
+		// Get app's user data directory (similar to mobile's external files directory)
+		const userDataPath = app.getPath('userData');
+		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		
+		// Create CallRecordings directory if it doesn't exist
+		if (!fs.existsSync(recordingsDir)) {
+			fs.mkdirSync(recordingsDir, { recursive: true });
+		}
+		
+		const filePath = path.join(recordingsDir, filename);
+		
+		// Save file
+		fs.writeFileSync(filePath, buffer);
+		
+		
+		return { success: true, filePath: filePath };
+	} catch (error) {
+		console.error("Save recording error:", error);
+		throw error;
+	}
+}
+
+async function handlePlayRecording(filename) {
+	try {
+		// Handle both string and object formats
+		const actualFilename = typeof filename === 'string' ? filename : filename.filename;
+		
+		// Get app's user data directory (CallRecordings folder)
+		const userDataPath = app.getPath('userData');
+		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		const filePath = path.join(recordingsDir, actualFilename);
+		
+		// Check if file exists
+		if (!fs.existsSync(filePath)) {
+			throw new Error(`Recording file not found: ${actualFilename}`);
+		}
+		
+		// Open file with default application
+		await shell.openPath(filePath);
+		
+		
+		return { success: true, filePath: filePath };
+	} catch (error) {
+		console.error("Play recording error:", error);
+		throw error;
+	}
+}
+
+async function handleDeleteRecordingFile(filename) {
+	try {
+		// Get app's user data directory (CallRecordings folder)
+		const userDataPath = app.getPath('userData');
+		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		const filePath = path.join(recordingsDir, filename);
+		
+		// Check if file exists
+		if (!fs.existsSync(filePath)) {
+			return { success: true, filePath: filePath, message: 'File not found (already deleted)' };
+		}
+		
+		// Delete file
+		fs.unlinkSync(filePath);
+		
+		
+		return { success: true, filePath: filePath };
+	} catch (error) {
+		console.error("Delete recording error:", error);
+		throw error;
+	}
+}
+
+// Register IPC handlers using ipcMain.handle for contextBridge
+ipcMain.handle('save-recording', async (event, data) => {
+	try {
+		const result = await handleSaveRecording(data);
+		return result;
+	} catch (error) {
+		throw error;
+	}
+});
+
+ipcMain.handle('play-recording', async (event, filename) => {
+	try {
+		const result = await handlePlayRecording(filename);
+		return result;
+	} catch (error) {
+		throw error;
+	}
+});
+
+ipcMain.handle('get-recording-file-url', async (event, filename) => {
+	try {
+		// Get app's user data directory (CallRecordings folder)
+		const userDataPath = app.getPath('userData');
+		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		const filePath = path.join(recordingsDir, filename);
+		
+		// Check if file exists
+		if (!fs.existsSync(filePath)) {
+			throw new Error(`Recording file not found: ${filename}`);
+		}
+		
+		// Read file and convert to base64 for blob URL
+		const fileBuffer = fs.readFileSync(filePath);
+		const base64 = fileBuffer.toString('base64');
+		
+		// Determine MIME type from extension
+		const ext = path.extname(filename).toLowerCase();
+		let mimeType = 'audio/webm'; // default
+		if (ext === '.webm') mimeType = 'audio/webm';
+		else if (ext === '.ogg') mimeType = 'audio/ogg';
+		else if (ext === '.m4a') mimeType = 'audio/mp4';
+		else if (ext === '.wav') mimeType = 'audio/wav';
+		
+		// Return data URL that can be used as blob
+		const dataUrl = `data:${mimeType};base64,${base64}`;
+		
+		return { success: true, url: dataUrl, filePath: filePath };
+	} catch (error) {
+		console.error("Get recording file URL error:", error);
+		throw error;
+	}
+});
+
+ipcMain.handle('get-downloads-path', async (event) => {
+	try {
+		// Return app's CallRecordings directory path (not Downloads)
+		const userDataPath = app.getPath('userData');
+		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		return recordingsDir;
+	} catch (error) {
+		console.error("Get recordings path error:", error);
+		throw error;
+	}
+});
+
+ipcMain.handle('delete-recording-file', async (event, filename) => {
+	try {
+		const result = await handleDeleteRecordingFile(filename);
+		return result;
+	} catch (error) {
+		throw error;
+	}
 });

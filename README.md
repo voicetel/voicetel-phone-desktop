@@ -35,7 +35,8 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **Desktop-First Design**
   - 📞 Phone - Main dialing and call interface with large buttons
   - 📋 Event Log - Real-time SIP message logging and debugging
-  - ⚙️ Settings - SIP configuration and credentials management
+  - ⚙️ Settings - SIP configuration, credentials, and call recording preferences
+  - 📞 Call History - View past calls with inline audio playback for recordings
 - **Visual Call Indicators** - Ringing animation, call status, duration display
 - **Desktop Notifications** - System notifications for incoming calls
 - **Keyboard Shortcuts**
@@ -51,6 +52,12 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **WebRTC Diagnostics** - Built-in troubleshooting tips for media negotiation issues
 - **Call History** - Track incoming, outgoing, missed, and declined calls with timestamps
 - **Redial Functionality** - Quick redial from call history with formatted phone numbers
+- **Call Recording** - Optional automatic recording of all calls with inline playback
+  - Enable/disable recording in Settings
+  - Recordings stored locally in app data directory
+  - Inline audio player in call history for easy playback
+  - Clear all recordings with one click
+  - Mixed audio tracks (local + remote) for complete call capture
 
 ## 🚀 Installation
 
