@@ -43,22 +43,31 @@ build_rpm() {
     # Create output directory
     mkdir -p dist
     
-    # Run the container and build RPM
-    echo "🚀 Running RPM build in container..."
+    # Run the container and copy RPM from pre-built image
+    echo "🚀 Copying RPM from container..."
     docker run --rm \
         -v "$(pwd)/dist:/output" \
-        -v "$(pwd):/source" \
         voicetel-rpm-builder sh -c "
-            cd /source &&
-            npm install &&
-            npm run build:rpm &&
-            cp /source/dist/*.rpm /output/ 2>/dev/null || echo 'No RPM files found'
+            # Copy from pre-built location in image
+            if [ -d /app/dist ] && ls /app/dist/*.rpm 1> /dev/null 2>&1; then
+                cp /app/dist/*.rpm /output/ && echo 'Copied RPM from /app/dist/'
+            # Also try building fresh if not found
+            elif [ -d /source ]; then
+                cd /source &&
+                npm install &&
+                npm run build:rpm &&
+                cp /source/dist/*.rpm /output/ 2>/dev/null && echo 'Built and copied RPM from /source/dist/'
+            else
+                echo 'No RPM files found'
+                exit 1
+            fi
         "
     
-    # Check result
-    if [ -f "dist/voicetel-phone-3.5.5.x86_64.rpm" ]; then
+    # Check result - look for any .rpm file (actual filename is VoiceTel-3.5.5.rpm)
+    if ls dist/*.rpm 1> /dev/null 2>&1; then
+        RPM_FILE=$(ls dist/*.rpm | head -1)
         echo -e "${GREEN}✅ RPM package built successfully!${NC}"
-        echo -e "${BLUE}📁 Location: dist/voicetel-phone-3.5.5.x86_64.rpm${NC}"
+        echo -e "${BLUE}📁 Location: ${RPM_FILE}${NC}"
         ls -lh dist/*.rpm
     else
         echo -e "${RED}❌ RPM package not found.${NC}"
