@@ -2759,10 +2759,6 @@
 			}
 
 			async function clearRecordings() {
-				if (!confirm("Are you sure you want to delete all call recordings? This cannot be undone.")) {
-					return;
-				}
-
 				try {
 					// Get all history entries to find recording filenames
 					const history = await Storage.getHistory();
