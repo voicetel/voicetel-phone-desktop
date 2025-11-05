@@ -33,9 +33,9 @@
 			"buildResources": "build",
 			"output": "dist"
 		},
-		"mac": {
-			"category": "public.app-category.utilities",
-			"icon": "build/icon.icns",
+	"mac": {
+		"category": "public.app-category.utilities",
+		"icon": "build/icons/icon.icns",
 			"target": [
 				{
 					"target": "dmg",
@@ -58,12 +58,12 @@
 			"entitlements": "build/entitlements.mac.plist",
 			"entitlementsInherit": "build/entitlements.mac.plist"
 		},
-		"dmg": {
-			"title": "${productName} ${version}",
-			"icon": "build/icon.icns"
-		},
-		"win": {
-			"icon": "build/icon.ico",
+	"dmg": {
+		"title": "${productName} ${version}",
+		"icon": "build/icons/icon.icns"
+	},
+	"win": {
+		"icon": "build/icons/icon.ico",
 			"artifactName": "${productName}-${version}.${ext}",
 			"target": [
 				{
