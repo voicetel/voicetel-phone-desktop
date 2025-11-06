@@ -79,21 +79,29 @@ build_rpm() {
 
 # Function to build Windows packages
 build_windows() {
-    echo -e "${YELLOW}📦 Building Windows packages...${NC}"
+    local BUILD_TYPE="${1:-all}"  # "all" or "portable"
+    local BUILD_CMD="build:win"
+    
+    if [ "$BUILD_TYPE" = "portable" ]; then
+        echo -e "${YELLOW}📦 Building Windows portable executable...${NC}"
+        BUILD_CMD="build:win-portable"
+    else
+        echo -e "${YELLOW}📦 Building all Windows packages (NSIS, MSI, Portable, ZIP)...${NC}"
+    fi
     
     # Try direct approach first (most reliable, no permission issues)
     echo "🔨 Building Docker image for Windows (direct approach)..."
-    if docker build -f Dockerfile.windows-direct -t voicetel-windows-builder . 2>/dev/null; then
+    if docker build --build-arg BUILD_CMD="$BUILD_CMD" -f Dockerfile.windows-direct -t voicetel-windows-builder . 2>/dev/null; then
         echo -e "${GREEN}✅ Direct approach build successful${NC}"
         DOCKERFILE="Dockerfile.windows-direct"
     else
         echo -e "${YELLOW}⚠️  Direct approach failed, trying pre-built approach...${NC}"
-        if docker build -f Dockerfile.windows-prebuilt -t voicetel-windows-builder . 2>/dev/null; then
+        if docker build --build-arg BUILD_CMD="$BUILD_CMD" -f Dockerfile.windows-prebuilt -t voicetel-windows-builder . 2>/dev/null; then
             echo -e "${GREEN}✅ Pre-built approach build successful${NC}"
             DOCKERFILE="Dockerfile.windows-prebuilt"
         else
-        echo -e "${RED}❌ All Windows build approaches failed!${NC}"
-        return 1
+            echo -e "${RED}❌ All Windows build approaches failed!${NC}"
+            return 1
         fi
     fi
     
@@ -101,26 +109,28 @@ build_windows() {
     mkdir -p dist
     
     # Run the container and build Windows packages
-    echo "🚀 Running Windows build in container..."
+    echo "🚀 Copying Windows packages from container..."
     if [ "$DOCKERFILE" = "Dockerfile.windows-direct" ] || [ "$DOCKERFILE" = "Dockerfile.windows-prebuilt" ]; then
-        # For root/copy approaches, just run the container and copy files out
+        # Copy all Windows package types
         docker run --rm \
             -v "$(pwd)/dist:/output" \
             voicetel-windows-builder sh -c "
-                cp /app/dist/*.exe /output/ 2>/dev/null || echo 'No Windows packages found' &&
-                cp /app/dist/*.msi /output/ 2>/dev/null || echo 'No MSI packages found'
+                # Copy all Windows package types
+                (cp /app/dist/*.exe /output/ 2>/dev/null && echo 'Copied .exe files') || echo 'No .exe files found' &&
+                (cp /app/dist/*.msi /output/ 2>/dev/null && echo 'Copied .msi files') || echo 'No .msi files found' &&
+                (cp /app/dist/*.zip /output/ 2>/dev/null && echo 'Copied .zip files') || echo 'No .zip files found'
             "
     fi
     
-    # Check results
-    if ls dist/*.exe dist/*.msi 2>/dev/null; then
+    # Check results - look for any Windows package files
+    if ls dist/*.exe dist/*.msi dist/*.zip 2>/dev/null | grep -q .; then
         echo -e "${GREEN}✅ Windows packages built successfully!${NC}"
         echo -e "${BLUE}📁 Windows packages in dist/:${NC}"
-        ls -lh dist/*.exe dist/*.msi 2>/dev/null || echo "No Windows packages found"
+        ls -lh dist/*.exe dist/*.msi dist/*.zip 2>/dev/null | grep -E "\.(exe|msi|zip)$" || echo "No Windows packages found"
     else
         echo -e "${RED}❌ Windows packages not found.${NC}"
         echo "Checking for any Windows files..."
-        ls -la dist/*.exe dist/*.msi 2>/dev/null || echo "No Windows packages found in dist/"
+        ls -la dist/*.exe dist/*.msi dist/*.zip 2>/dev/null | grep -E "\.(exe|msi|zip)$" || echo "No Windows packages found in dist/"
         return 1
     fi
 }
@@ -167,7 +177,10 @@ case "${1:-rpm}" in
         build_rpm
         ;;
     "windows")
-        build_windows
+        build_windows "all"
+        ;;
+    "windows-portable")
+        build_windows "portable"
         ;;
     "all")
         build_all
@@ -176,14 +189,15 @@ case "${1:-rpm}" in
         cleanup
         ;;
     "help"|"-h"|"--help")
-        echo "Usage: $0 [rpm|windows|all|clean|help]"
+        echo "Usage: $0 [rpm|windows|windows-portable|all|clean|help]"
         echo ""
         echo "Commands:"
-        echo "  rpm      - Build only RPM package using Docker (default)"
-        echo "  windows  - Build Windows packages (NSIS, MSI, Portable) using Docker"
-        echo "  all      - Build all packages (AppImage, DEB, RPM) using Docker"
-        echo "  clean    - Clean up Docker images"
-        echo "  help     - Show this help message"
+        echo "  rpm              - Build only RPM package using Docker (default)"
+        echo "  windows          - Build all Windows packages (NSIS, MSI, Portable, ZIP) using Docker"
+        echo "  windows-portable - Build only Windows portable executable using Docker"
+        echo "  all              - Build all packages (AppImage, DEB, RPM) using Docker"
+        echo "  clean            - Clean up Docker images"
+        echo "  help             - Show this help message"
         echo ""
         echo "Docker Approaches:"
         echo "  - Fedora-based: Uses native rpmbuild (Dockerfile.rpm)"
@@ -192,12 +206,15 @@ case "${1:-rpm}" in
         echo "  - Pre-built: Windows builds with better caching (Dockerfile.windows-prebuilt)"
         echo ""
         echo "NPM Scripts:"
-        echo "  npm run build:rpm-docker     - Build RPM using Docker"
-        echo "  npm run build:windows-docker - Build Windows (NSIS, MSI, Portable) using Docker"
-        echo "  npm run build:all-docker     - Build all packages using Docker"
-        echo "  npm run build:win-msi        - Build MSI installer only"
-        echo "  npm run build:win-nsis       - Build NSIS installer only"
-        echo "  npm run build:win-portable   - Build portable executable only"
+        echo "  npm run build:rpm-docker              - Build RPM using Docker"
+        echo "  npm run build:windows-docker         - Build all Windows packages using Docker"
+        echo "  npm run build:windows-portable-docker - Build Windows portable only using Docker"
+        echo "  npm run build:all-docker             - Build all packages using Docker"
+        echo "  npm run build:win                    - Build all Windows packages (native, requires Wine on Linux)"
+        echo "  npm run build:win-msi                - Build MSI installer only"
+        echo "  npm run build:win-nsis               - Build NSIS installer only"
+        echo "  npm run build:win-portable           - Build portable executable only"
+        echo "  npm run build:win-zip                 - Build ZIP archive only"
         ;;
     *)
         echo -e "${RED}❌ Unknown command: $1${NC}"

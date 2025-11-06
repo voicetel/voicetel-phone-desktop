@@ -34,7 +34,9 @@ RUN npm install
 COPY . .
 
 # Build Windows packages
-RUN npm run build:win
+# Build command can be overridden via build arg
+ARG BUILD_CMD="build:win"
+RUN npm run ${BUILD_CMD}
 
 # Show what was created
 RUN ls -la /app/dist/

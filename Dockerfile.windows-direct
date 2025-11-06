@@ -27,8 +27,10 @@ WORKDIR /app
 # Copy ALL source code into the container
 COPY . .
 
-# Install dependencies and build in one atomic step
-RUN npm install && npm run build:win
+# Install dependencies and build Windows packages
+# Build command can be overridden via build arg
+ARG BUILD_CMD="build:win"
+RUN npm install && npm run ${BUILD_CMD}
 
 # Show what was created
 RUN ls -la /app/dist/
