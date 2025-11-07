@@ -525,6 +525,8 @@ ipcMain.handle("open-oauth-window", async (event, authUrl) => {
 			webPreferences: {
 				nodeIntegration: false,
 				contextIsolation: true,
+				// Use a unique session partition to ensure fresh OAuth flow each time
+				partition: `oauth-${Date.now()}`,
 			},
 			title: "Sign in with Google",
 		});
@@ -554,6 +556,47 @@ ipcMain.handle("open-oauth-window", async (event, authUrl) => {
 
 		console.log("Opening OAuth URL:", authUrl);
 		oauthWindow.loadURL(authUrl);
+
+		// Listen for navigation to detect OAuth errors
+		oauthWindow.webContents.on("did-fail-load", (event, errorCode, errorDescription, validatedURL) => {
+			if (!resolved && errorCode !== -3) { // -3 is ERR_ABORTED, which is normal for redirects
+				resolved = true;
+				const index = oauthCallbacks.indexOf(checkToken);
+				if (index > -1) oauthCallbacks.splice(index, 1);
+				oauthWindow.close();
+				reject(new Error(`OAuth error: ${errorDescription} (${errorCode})`));
+			}
+		});
+
+		// Check for error in URL hash (OAuth errors come in the redirect URL)
+		oauthWindow.webContents.on("did-navigate", (event, url) => {
+			if (url.includes("oauth2callback")) {
+				// Check for error in the URL
+				const hash = new URL(url).hash.substring(1);
+				const params = new URLSearchParams(hash);
+				const error = params.get("error");
+				const errorDescription = params.get("error_description");
+				
+				if (error && !resolved) {
+					resolved = true;
+					const index = oauthCallbacks.indexOf(checkToken);
+					if (index > -1) oauthCallbacks.splice(index, 1);
+					oauthWindow.close();
+					
+					let errorMessage = `OAuth error: ${error}`;
+					if (errorDescription) {
+						errorMessage += ` - ${errorDescription}`;
+					}
+					
+					// Provide helpful message for common errors
+					if (error === "access_denied") {
+						errorMessage = "Access denied: This app is in testing mode. Please contact support@voicetel.com to request access, or ask the developer to add your Google account to the test users list.";
+					}
+					
+					reject(new Error(errorMessage));
+				}
+			}
+		});
 
 		oauthWindow.on("closed", () => {
 			// Remove callback

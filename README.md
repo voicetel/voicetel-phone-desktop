@@ -2,7 +2,7 @@
 
 A cross-platform WebRTC SIP phone built with Electron for VoiceTel communications. Make and receive calls directly from your desktop with a modern, intuitive interface.
 
-![Version](https://img.shields.io/badge/version-3.5.5-blue)
+![Version](https://img.shields.io/badge/version-3.5.6-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
@@ -34,9 +34,10 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 ### 🎨 User Interface
 - **Desktop-First Design**
   - 📞 Phone - Main dialing and call interface with large buttons
+  - 👥 Contacts - Google Contacts integration with search and quick dial
+  - 📜 Call History - View past calls with inline audio playback for recordings
   - 📋 Event Log - Real-time SIP message logging and debugging
   - ⚙️ Settings - SIP configuration, credentials, and call recording preferences
-  - 📞 Call History - View past calls with inline audio playback for recordings
 - **Visual Call Indicators** - Ringing animation, call status, duration display
 - **Desktop Notifications** - System notifications for incoming calls
 - **Keyboard Shortcuts**
@@ -52,6 +53,15 @@ A cross-platform WebRTC SIP phone built with Electron for VoiceTel communication
 - **WebRTC Diagnostics** - Built-in troubleshooting tips for media negotiation issues
 - **Call History** - Track incoming, outgoing, missed, and declined calls with timestamps
 - **Redial Functionality** - Quick redial from call history with formatted phone numbers
+- **Google Contacts Integration** - Seamless access to your Google Contacts
+  - Sign in with Google to access your contacts
+  - Account selection support for multiple Google accounts
+  - Search contacts by name or phone number
+  - Quick dial by clicking any contact's phone number
+  - Displays contact name, phone number, and phone type (mobile, work, home, etc.)
+  - Refresh contacts to sync latest changes
+  - Clear contacts list when needed
+  - Only contacts with phone numbers are displayed
 - **Call Recording** - Optional automatic recording of all calls with inline playback
   - Enable/disable recording in Settings
   - Recordings stored locally in app data directory
