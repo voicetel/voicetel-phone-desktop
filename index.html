@@ -436,6 +436,13 @@
 					</button>
 					<button
 						class="header-toggle"
+						onclick="showContacts()"
+						title="Contacts"
+					>
+						👥
+					</button>
+					<button
+						class="header-toggle"
 						onclick="showHistory()"
 						title="Call History"
 					>
@@ -463,8 +470,8 @@
 			<div class="content">
 				<div class="section config-section" id="configSection">
 					<h2>Settings</h2>
-					
-					<div class="button-group" style="margin-bottom: 25px;">
+
+					<div class="button-group" style="margin-bottom: 25px">
 						<button
 							id="registerBtn"
 							class="btn-primary"
@@ -481,11 +488,7 @@
 							Unregister
 						</button>
 					</div>
-					<input
-						type="hidden"
-						id="sipServer"
-						value=""
-					/>
+					<input type="hidden" id="sipServer" value="" />
 
 					<div class="form-group">
 						<label>
@@ -642,9 +645,11 @@
 								border-radius: 4px;
 							"
 						>
-							⚠️ <strong>Legal Notice:</strong> Only enable call recording where it is legally permitted. 
-							Recording calls without consent may violate privacy laws in your jurisdiction. 
-							Always inform all parties before recording.
+							⚠️ <strong>Legal Notice:</strong> Only enable call
+							recording where it is legally permitted. Recording
+							calls without consent may violate privacy laws in
+							your jurisdiction. Always inform all parties before
+							recording.
 						</div>
 
 						<div
@@ -667,7 +672,6 @@
 							Clear All Saved Data
 						</button>
 					</div>
-
 				</div>
 
 				<div class="section hideable" id="callSection">
@@ -803,7 +807,7 @@
 					>
 						WebSocket: Loading... | SIP Domain: Loading...
 					</div>
-					
+
 					<details
 						style="
 							margin-top: 15px;
@@ -855,6 +859,58 @@
 					</details>
 				</div>
 
+				<div class="section log-section" id="contactsSection">
+					<h2>Contacts</h2>
+					<div
+						id="googleAuthSection"
+						style="margin-bottom: 20px; text-align: center"
+					>
+						<div id="notSignedIn">
+							<p style="margin-bottom: 10px; color: #666">
+								Sign in with Google to access your contacts
+							</p>
+							<button
+								class="btn-primary"
+								onclick="signInWithGoogle()"
+							>
+								🔐 Sign in with Google
+							</button>
+						</div>
+						<div id="signedIn" style="display: none">
+							<p style="margin-bottom: 10px; color: #666">
+								<span id="userEmail"></span>
+							</p>
+							<button
+								class="btn-secondary"
+								onclick="signOutGoogle()"
+							>
+								Sign Out
+							</button>
+							<button
+								class="btn-primary"
+								onclick="loadGoogleContacts()"
+								style="margin-left: 10px"
+							>
+								🔄 Refresh Contacts
+							</button>
+						</div>
+					</div>
+					<input
+						type="text"
+						id="contactSearch"
+						placeholder="🔍 Search contacts..."
+						oninput="filterContacts()"
+						style="
+							width: 100%;
+							padding: 10px;
+							margin-bottom: 10px;
+							border: 1px solid #ddd;
+							border-radius: 4px;
+						"
+					/>
+					<div id="contactsList" class="log"></div>
+				</div>
+
 				<div class="section log-section" id="historySection">
 					<h2>Call History</h2>
 					<div id="callHistory" class="log"></div>
@@ -865,7 +921,10 @@
 						<button class="btn-secondary" onclick="clearHistory()">
 							Clear History
 						</button>
-						<button class="btn-secondary" onclick="clearRecordings()">
+						<button
+							class="btn-secondary"
+							onclick="clearRecordings()"
+						>
 							Clear Recordings
 						</button>
 						<button
@@ -888,28 +947,38 @@
 		<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
 		<script>
 			// Define navigation functions immediately so they're available for onclick handlers
-			window.showPhone = function() { 
-				if (typeof setView === 'function') setView("phone");
+			window.showPhone = function () {
+				if (typeof setView === "function") setView("phone");
 			};
-			window.showSettings = function() { 
-				if (typeof setView === 'function') setView("settings");
+			window.showSettings = function () {
+				if (typeof setView === "function") setView("settings");
 			};
-			window.showLog = function() { 
-				if (typeof setView === 'function') setView("log");
+			window.showLog = function () {
+				if (typeof setView === "function") setView("log");
 			};
-			window.showHistory = function() { 
-				if (typeof setView === 'function') setView("history");
+			window.showHistory = function () {
+				if (typeof setView === "function") setView("history");
 			};
-			
+			window.showContacts = function () {
+				if (typeof setView === "function") setView("contacts");
+			};
+
+			// Google auth functions - placeholders, will be properly defined later
+			window.signInWithGoogle = function () {};
+			window.signOutGoogle = function () {};
+			window.loadGoogleContacts = function () {};
+			window.filterContacts = function () {};
+
 			// Constants
 			const INCOMING_CALL_TIMEOUT_MS = 30000;
 			const DTMF_DURATION_MS = 250;
 			const DTMF_INTERTONE_GAP_MS = 100;
-			const SIP_REGISTRATION_EXPIRES_SEC = 300;
+			const SIP_REGISTRATION_EXPIRES_SEC = 180;
 			const USERNAME_LENGTH = 10;
-			const APP_VERSION = window.VOICETEL_VERSION || "3.5.5";
+			const APP_VERSION = window.VOICETEL_VERSION || "3.5.6";
 			const SIP_DOMAIN = window.VOICETEL_SIP_DOMAIN || "tls.voicetel.com";
-			const SIP_SERVER = window.VOICETEL_SIP_SERVER || "wss://tls.voicetel.com:443";
+			const SIP_SERVER =
+				window.VOICETEL_SIP_SERVER || "wss://tls.voicetel.com:443";
 
 			// Configure localforage
 			localforage.config({
@@ -943,9 +1012,9 @@
 							registerOnStartup:
 								document.getElementById("registerOnStartup")
 									.checked,
-							enableCallRecording:
-								document.getElementById("enableCallRecording")
-									.checked,
+							enableCallRecording: document.getElementById(
+								"enableCallRecording",
+							).checked,
 							saveCredentials: true,
 						};
 
@@ -1021,7 +1090,12 @@
 					log("All saved data cleared");
 				},
 
-				async addCallToHistory(type, number, duration, recording = null) {
+				async addCallToHistory(
+					type,
+					number,
+					duration,
+					recording = null,
+				) {
 					try {
 						const history =
 							(await localforage.getItem(this.HISTORY_KEY)) || [];
@@ -1050,19 +1124,36 @@
 						// Find the most recent call entry (first in array) and add/update recording filename
 						if (history.length > 0) {
 							// Update even if recording already exists (in case filename changed or save was retried)
-							if (!history[0].recording || history[0].recording !== filename) {
+							if (
+								!history[0].recording ||
+								history[0].recording !== filename
+							) {
 								history[0].recording = filename;
-								await localforage.setItem(this.HISTORY_KEY, history);
-								log(`Recording ${filename} linked to call history`);
+								await localforage.setItem(
+									this.HISTORY_KEY,
+									history,
+								);
+								log(
+									`Recording ${filename} linked to call history`,
+								);
 							} else {
-								log(`Recording ${filename} already in call history`);
+								log(
+									`Recording ${filename} already in call history`,
+								);
 							}
 						} else {
-							console.warn("No call history found to update with recording");
+							console.warn(
+								"No call history found to update with recording",
+							);
 						}
 					} catch (e) {
-						console.error("Failed to update call history with recording:", e);
-						log(`Failed to update call history with recording: ${e.message}`);
+						console.error(
+							"Failed to update call history with recording:",
+							e,
+						);
+						log(
+							`Failed to update call history with recording: ${e.message}`,
+						);
 					}
 				},
 
@@ -1086,7 +1177,12 @@
 			let callTimer = null;
 			let callStartTime = null;
 			let ringingAudio = null;
-			
+
+			// Registration management
+			let registrationPromise = null; // Single registration promise to prevent concurrent registrations
+			let unregistrationPromise = null; // Track unregistration in progress
+			let reRegisterTimeout = null; // Debounce re-registration
+
 			// Event listener cleanup tracking
 			let activeEventListeners = new Set();
 			let webSocketMessageHandler = null;
@@ -1097,7 +1193,7 @@
 			let __incomingRaw = null;
 			let __incomingDisplay = null;
 			let activeCall = false; // Global flag to track if there's an active call
-			
+
 			// Recording state
 			let isRecording = false;
 			let mediaRecorder = null;
@@ -1231,167 +1327,286 @@
 			}
 
 			// SIP Registration
-			function register() {
-				if (typeof SIP === "undefined") {
-					alert(
-						"SIP.js library is not loaded. Please refresh the page.",
-					);
-					log("Error: SIP.js library not available");
-					return;
+			async function register() {
+				// If already registering, return existing promise
+				if (registrationPromise) {
+					log("Registration already in progress, waiting...");
+					return registrationPromise;
 				}
 
-				const server = document.getElementById("sipServer").value;
-				const username = document.getElementById("username").value;
-				const password = document.getElementById("password").value;
-				const displayName =
-					document.getElementById("displayName").value || username;
-				const callerID = document.getElementById("callerID").value;
-
-				if (!server || !username || !password) {
-					alert("Please fill in all required fields");
-					return;
+				// If unregistering, wait for it to complete
+				if (unregistrationPromise) {
+					log("Waiting for unregistration to complete...");
+					await unregistrationPromise;
 				}
 
-				if (!isValidUsername(username)) {
-					alert("Username must be exactly 10 numeric digits");
-					document.getElementById("usernameError").style.display =
-						"block";
-					return;
-				}
+				// Create new promise for this registration attempt
+				registrationPromise = new Promise((resolve, reject) => {
+					if (typeof SIP === "undefined") {
+						const error = new Error("SIP.js library not available");
+						alert(
+							"SIP.js library is not loaded. Please refresh the page.",
+						);
+						log("Error: SIP.js library not available");
+						registrationPromise = null;
+						reject(error);
+						return;
+					}
 
-				registeredUsername = username;
+					const server = document.getElementById("sipServer").value;
+					const username = document.getElementById("username").value;
+					const password = document.getElementById("password").value;
+					const displayName =
+						document.getElementById("displayName").value ||
+						username;
+					const callerID = document.getElementById("callerID").value;
 
-				try {
-					log("Starting registration...");
-					log(`Connecting to VoiceTel server (${SIP_DOMAIN})...`);
+					if (!server || !username || !password) {
+						const error = new Error("Missing required fields");
+						alert("Please fill in all required fields");
+						registrationPromise = null;
+						reject(error);
+						return;
+					}
 
-					const uri = `sip:${username}@${SIP_DOMAIN}`;
+					if (!isValidUsername(username)) {
+						const error = new Error("Invalid username format");
+						alert("Username must be exactly 10 numeric digits");
+						document.getElementById("usernameError").style.display =
+							"block";
+						registrationPromise = null;
+						reject(error);
+						return;
+					}
 
-					const transportOptions = {
-						wsServers: [server],
-						traceSip: true,
-						wsServerMaxReconnectionAttempts: 5,
-						wsServerReconnectionTimeout: 4,
-					};
+					registeredUsername = username;
 
-					const userAgentOptions = {
-						uri: uri,
-						transportOptions: transportOptions,
-						authorizationUser: username,
-						password: password,
-						displayName: displayName,
-						register: true,
-						registerOptions: {
-							registrar: `sip:${SIP_DOMAIN}`,
-							expires: SIP_REGISTRATION_EXPIRES_SEC,
-						},
-						sessionDescriptionHandlerFactoryOptions: {
-							constraints: {
-								audio: true,
-								video: false,
+					try {
+						log("Starting registration...");
+						log(`Connecting to VoiceTel server (${SIP_DOMAIN})...`);
+
+						const uri = `sip:${username}@${SIP_DOMAIN}`;
+
+						const transportOptions = {
+							wsServers: [server],
+							traceSip: true,
+							wsServerMaxReconnectionAttempts: 5,
+							wsServerReconnectionTimeout: 4,
+						};
+
+						const userAgentOptions = {
+							uri: uri,
+							transportOptions: transportOptions,
+							authorizationUser: username,
+							password: password,
+							displayName: displayName,
+							register: true,
+							registerOptions: {
+								registrar: `sip:${SIP_DOMAIN}`,
+								expires: SIP_REGISTRATION_EXPIRES_SEC,
 							},
-							peerConnectionOptions: {
-								rtcConfiguration: {
-									iceServers: [
-										{
-											urls: "stun:stun.l.google.com:19302",
-										},
-										{
-											urls: "stun:stun1.l.google.com:19302",
-										},
-									],
+							sessionDescriptionHandlerFactoryOptions: {
+								constraints: {
+									audio: true,
+									video: false,
+								},
+								peerConnectionOptions: {
+									rtcConfiguration: {
+										iceServers: [
+											{
+												urls: "stun:stun.l.google.com:19302",
+											},
+											{
+												urls: "stun:stun1.l.google.com:19302",
+											},
+										],
+									},
 								},
 							},
-						},
-						hackWssInTransport: false,
-						hackIpInContact: true,
-						dtmfType: "rtp",
-						userAgentString: `VoiceTel/${APP_VERSION}`,
-					};
+							hackWssInTransport: false,
+							hackIpInContact: true,
+							dtmfType: "rtp",
+							userAgentString: `VoiceTel/${APP_VERSION}`,
+						};
 
-					userAgent = new SIP.UA(userAgentOptions);
+						userAgent = new SIP.UA(userAgentOptions);
 
-					userAgent.on("registered", () => {
-						isRegistered = true;
-						updateStatus("Registered", true);
-						log("Successfully registered");
-						log("SIP/2.0 200 OK");
+						// Use .once() for one-time event handlers
+						userAgent.once("registered", () => {
+							isRegistered = true;
+							updateStatus("Registered", true);
+							log("Successfully registered");
+							log("SIP/2.0 200 OK");
 
-						document.getElementById("registerBtn").disabled = true;
-						document.getElementById("unregisterBtn").disabled =
-							false;
-						document.getElementById("callBtn").disabled = false;
+							document.getElementById("registerBtn").disabled =
+								true;
+							document.getElementById("unregisterBtn").disabled =
+								false;
+							document.getElementById("callBtn").disabled = false;
 
-						if (
-							"Notification" in window &&
-							Notification.permission === "default"
-						) {
-							Notification.requestPermission().then(
-								(permission) => {
-									if (permission === "granted") {
-										log(
-											"Desktop notifications enabled for incoming calls",
-										);
-									}
-								},
-							);
-						}
-					});
+							if (
+								"Notification" in window &&
+								Notification.permission === "default"
+							) {
+								Notification.requestPermission().then(
+									(permission) => {
+										if (permission === "granted") {
+											log(
+												"Desktop notifications enabled for incoming calls",
+											);
+										}
+									},
+								);
+							}
 
-					userAgent.on("registrationFailed", (response, cause) => {
-						if (
-							response &&
-							response.status_code &&
-							response.reason_phrase
-						) {
-							log(
-								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-							);
-						}
-						log(`Registration failed: ${cause}`);
+							// Clear promise and resolve
+							registrationPromise = null;
+							resolve();
+						});
+
+						userAgent.once(
+							"registrationFailed",
+							(response, cause) => {
+								if (
+									response &&
+									response.status_code &&
+									response.reason_phrase
+								) {
+									log(
+										`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+									);
+								}
+								log(`Registration failed: ${cause}`);
+								updateStatus("Registration Failed");
+
+								// Clear promise and reject
+								const error = new Error(
+									cause || "Registration failed",
+								);
+								registrationPromise = null;
+								reject(error);
+							},
+						);
+
+						// Keep these as .on() for ongoing events
+						userAgent.on("unregistered", () => {
+							log("SIP/2.0 200 OK (Unregistered)");
+						});
+
+						userAgent.on("invite", (session) => {
+							const callerInfo =
+								session.remoteIdentity.displayName ||
+								session.remoteIdentity.uri.user;
+							log(`Incoming call from ${callerInfo}`);
+
+							if (
+								"Notification" in window &&
+								Notification.permission === "granted"
+							) {
+								new Notification("VoiceTel Phone", {
+									body: `Incoming call from ${callerInfo}`,
+									requireInteraction: true,
+								});
+							}
+
+							handleIncomingCall(session);
+						});
+
+						userAgent.start();
+					} catch (error) {
+						log(`Registration failed: ${error.message}`);
 						updateStatus("Registration Failed");
-					});
+						console.error(error);
+						registrationPromise = null;
+						reject(error);
+					}
+				});
 
-					userAgent.on("unregistered", () => {
-						log("SIP/2.0 200 OK (Unregistered)");
-					});
-
-					userAgent.on("invite", (session) => {
-						const callerInfo =
-							session.remoteIdentity.displayName ||
-							session.remoteIdentity.uri.user;
-						log(`Incoming call from ${callerInfo}`);
-
-						if (
-							"Notification" in window &&
-							Notification.permission === "granted"
-						) {
-							new Notification("VoiceTel Phone", {
-								body: `Incoming call from ${callerInfo}`,
-								// Remove emoji icon to prevent file:// loading errors
-								requireInteraction: true,
-							});
-						}
-
-						handleIncomingCall(session);
-					});
-
-					userAgent.start();
-				} catch (error) {
-					log(`Registration failed: ${error.message}`);
-					updateStatus("Registration Failed");
-					console.error(error);
-				}
+				return registrationPromise;
 			}
 
-			function unregister() {
+			async function unregister() {
+				// If already unregistering, return existing promise
+				if (unregistrationPromise) {
+					log("Unregistration already in progress, waiting...");
+					return unregistrationPromise;
+				}
+
+				// If registering, wait for it to complete
+				if (registrationPromise) {
+					log(
+						"Waiting for registration to complete before unregistering...",
+					);
+					try {
+						await registrationPromise;
+					} catch (e) {
+						// Ignore registration errors, proceed with unregister
+					}
+				}
+
+				// Create new promise for this unregistration attempt
+				unregistrationPromise = new Promise((resolve, reject) => {
+					try {
+						// Clean up WebSocket event listeners
+						if (
+							userAgent &&
+							userAgent.transport &&
+							userAgent.transport.ws &&
+							webSocketMessageHandler
+						) {
+							userAgent.transport.ws.removeEventListener(
+								"message",
+								webSocketMessageHandler,
+							);
+							webSocketMessageHandler = null;
+						}
+
+						if (userAgent) {
+							userAgent.unregister();
+							userAgent.stop();
+							userAgent = null;
+						}
+
+						isRegistered = false;
+						registeredUsername = null;
+						updateStatus("Disconnected");
+						log("Unregistered successfully");
+
+						document.getElementById("registerBtn").disabled = false;
+						document.getElementById("unregisterBtn").disabled =
+							true;
+						document.getElementById("callBtn").disabled = true;
+
+						// Clear promise and resolve
+						unregistrationPromise = null;
+						resolve();
+					} catch (error) {
+						log(`Unregister failed: ${error.message}`);
+						console.error(error);
+						unregistrationPromise = null;
+						reject(error);
+					}
+				});
+
+				return unregistrationPromise;
+			}
+
+			async function unregister() {
 				try {
 					// Clean up WebSocket event listeners
-					if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-						userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+					if (
+						userAgent &&
+						userAgent.transport &&
+						userAgent.transport.ws &&
+						webSocketMessageHandler
+					) {
+						userAgent.transport.ws.removeEventListener(
+							"message",
+							webSocketMessageHandler,
+						);
 						webSocketMessageHandler = null;
 					}
-					
+
 					if (userAgent) {
 						userAgent.unregister();
 						userAgent.stop();
@@ -1411,6 +1626,428 @@
 					console.error(error);
 				}
 			}
+
+			// Re-registration with debouncing
+			async function reRegister() {
+				// Clear any pending re-registration
+				if (reRegisterTimeout) {
+					clearTimeout(reRegisterTimeout);
+					reRegisterTimeout = null;
+				}
+
+				// Check if there's an active call or incoming session
+				if (currentSession || incomingSession) {
+					log("Cannot re-register during active call");
+					return;
+				}
+
+				// Debounce: wait 500ms before executing
+				reRegisterTimeout = setTimeout(() => {
+					executeReRegister();
+				}, 500);
+			}
+
+			async function executeReRegister() {
+				try {
+					log("Executing re-registration...");
+
+					// Check if we're actually registered
+					if (!isRegistered || !userAgent) {
+						log("Not currently registered, skipping re-register");
+						return;
+					}
+
+					// Check WebSocket state
+					if (
+						userAgent &&
+						userAgent.transport &&
+						userAgent.transport.ws
+					) {
+						const ws = userAgent.transport.ws;
+						if (ws.readyState !== WebSocket.OPEN) {
+							log(
+								`WebSocket not open (state: ${ws.readyState}), cannot re-register`,
+							);
+							return;
+						}
+					}
+
+					// Safely unregister and re-register
+					await unregister();
+					await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
+					await register();
+					log("Re-registration completed successfully");
+				} catch (error) {
+					log(`Re-registration failed: ${error.message}`);
+					console.error("Re-registration error:", error);
+				}
+			}
+
+			// Setup app state listeners for visibility changes
+			function setupAppStateListeners() {
+				// Listen for visibility changes (app coming to foreground)
+				document.addEventListener("visibilitychange", () => {
+					if (!document.hidden) {
+						log("App became visible");
+						if (isRegistered) {
+							reRegister();
+						}
+					}
+				});
+
+				// Listen for window focus
+				window.addEventListener("focus", () => {
+					log("Window gained focus");
+					if (isRegistered) {
+						reRegister();
+					}
+				});
+			}
+
+			// Setup WebSocket monitoring
+			function setupWebSocketMonitoring() {
+				setInterval(() => {
+					if (
+						userAgent &&
+						userAgent.transport &&
+						userAgent.transport.ws
+					) {
+						const ws = userAgent.transport.ws;
+
+						// If WebSocket is closed but we think we're registered, clear the promise
+						if (
+							ws.readyState === WebSocket.CLOSED &&
+							registrationPromise
+						) {
+							log(
+								"WebSocket died, clearing registration promise",
+							);
+							registrationPromise = null;
+							isRegistered = false;
+							updateStatus("Disconnected");
+						}
+					}
+				}, 5000); // Check every 5 seconds
+			}
+
+			// Format phone number for display
+			function formatPhoneNumber(number) {
+				const cleanNumber = String(number).replace(/\D/g, "");
+
+				if (cleanNumber.length === 10) {
+					// US format: (555) 123-4567
+					return `(${cleanNumber.slice(0, 3)}) ${cleanNumber.slice(3, 6)}-${cleanNumber.slice(6)}`;
+				} else if (cleanNumber.length === 11 && cleanNumber.startsWith("1")) {
+					// 11 digits starting with 1: show as 10-digit format (555) 123-4567
+					return `(${cleanNumber.slice(1, 4)}) ${cleanNumber.slice(4, 7)}-${cleanNumber.slice(7)}`;
+				} else if (cleanNumber.length === 7) {
+					// Local format: 123-4567
+					return `${cleanNumber.slice(0, 3)}-${cleanNumber.slice(3)}`;
+				} else if (cleanNumber.length > 11) {
+					// International format: +XX XXX XXX XXXX
+					const countryCode = cleanNumber.slice(0, cleanNumber.length - 10);
+					const areaCode = cleanNumber.slice(cleanNumber.length - 10, cleanNumber.length - 7);
+					const firstPart = cleanNumber.slice(cleanNumber.length - 7, cleanNumber.length - 4);
+					const lastPart = cleanNumber.slice(cleanNumber.length - 4);
+					return `+${countryCode} ${areaCode} ${firstPart} ${lastPart}`;
+				}
+
+				return number; // Return as-is if format not recognized
+			}
+
+			// Google Contacts Integration
+			let googleAccessToken = null;
+			let googleContacts = [];
+
+			async function initGoogleAuth() {
+				// Check if we have a saved token
+				const savedToken = localStorage.getItem("google_access_token");
+				if (savedToken) {
+					googleAccessToken = savedToken;
+					log("Google: Using saved access token");
+					try {
+						await loadGoogleContacts();
+					} catch (error) {
+						log(
+							`Google: Failed to load contacts: ${error.message}`,
+						);
+						// Token might be expired, clear it
+						localStorage.removeItem("google_access_token");
+						googleAccessToken = null;
+					}
+				}
+			}
+
+			window.signInWithGoogle = async function () {
+				try {
+					const CLIENT_ID =
+						"1095726571445-nui2mdnita803bfs2qoslhbtf749jcfc.apps.googleusercontent.com";
+					const REDIRECT_URI = "http://localhost:3000/oauth2callback";
+					const SCOPE =
+						"https://www.googleapis.com/auth/contacts.readonly";
+
+					const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams(
+						{
+							client_id: CLIENT_ID,
+							redirect_uri: REDIRECT_URI,
+							response_type: "token",
+							scope: SCOPE,
+						},
+					)}`;
+
+					log("Opening Google sign-in window...");
+
+					// Use Electron's IPC to open OAuth window
+					if (
+						window.electronAPI &&
+						window.electronAPI.openOAuthWindow
+					) {
+						const token =
+							await window.electronAPI.openOAuthWindow(authUrl);
+						if (token) {
+							googleAccessToken = token;
+							await localforage.setItem(
+								"google_access_token",
+								token,
+							);
+							log("Google: Successfully signed in");
+							updateAuthUI(true);
+							await loadGoogleContacts();
+						} else {
+							log("Google: Sign-in cancelled or failed");
+						}
+					} else {
+						log("Google: OAuth window API not available");
+					}
+				} catch (error) {
+					log(`Google sign-in error: ${error.message}`);
+					console.error("Google sign-in error:", error);
+				}
+			};
+
+			window.loadGoogleContacts = async function () {
+				if (!googleAccessToken) {
+					log("Google: No access token available");
+					return;
+				}
+
+				try {
+					log("Loading Google contacts...");
+
+					const response = await fetch(
+						"https://people.googleapis.com/v1/people/me/connections?personFields=names,phoneNumbers&pageSize=1000",
+						{
+							headers: {
+								Authorization: `Bearer ${googleAccessToken}`,
+							},
+						},
+					);
+
+					if (!response.ok) {
+						throw new Error(
+							`HTTP ${response.status}: ${response.statusText}`,
+						);
+					}
+
+					const data = await response.json();
+
+					if (data.connections) {
+						googleContacts = data.connections
+							.filter(
+								(person) =>
+									person.phoneNumbers &&
+									person.phoneNumbers.length > 0,
+							)
+							.map((person) => ({
+								name:
+									person.names?.[0]?.displayName || "Unknown",
+								phoneNumbers: person.phoneNumbers.map(
+									(phone) => ({
+										number: phone.value,
+										type: phone.type || "other",
+									}),
+								),
+							}));
+
+						log(
+							`Loaded ${googleContacts.length} contacts from Google`,
+						);
+						renderContacts(googleContacts);
+					} else {
+						log("No contacts found");
+					}
+				} catch (error) {
+					log(`Failed to load Google contacts: ${error.message}`);
+					console.error("Load contacts error:", error);
+
+					// If unauthorized, clear token
+					if (error.message.includes("401")) {
+						localStorage.removeItem("google_access_token");
+						googleAccessToken = null;
+					}
+				}
+			};
+
+			function renderContacts(contacts) {
+				const contactsList = document.getElementById("contactsList");
+				if (!contactsList) return;
+
+				if (!contacts || contacts.length === 0) {
+					contactsList.innerHTML =
+						'<div style="text-align: center; padding: 20px; color: #666;">No contacts found</div>';
+					return;
+				}
+
+				// Sort contacts alphabetically
+				const sortedContacts = [...contacts].sort((a, b) =>
+					a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+				);
+
+				contactsList.innerHTML = "";
+
+				sortedContacts.forEach((contact) => {
+					// Filter duplicate phone numbers
+					const uniqueNumbers = [];
+					const seenNumbers = new Set();
+
+					contact.phoneNumbers.forEach((phoneObj) => {
+						const cleaned = phoneObj.number.replace(/\D/g, "");
+						if (!seenNumbers.has(cleaned) && cleaned.length > 0) {
+							seenNumbers.add(cleaned);
+							uniqueNumbers.push(phoneObj);
+						}
+					});
+
+					// Skip contacts with no valid phone numbers
+					if (uniqueNumbers.length === 0) return;
+
+					// Create contact item container
+					const contactDiv = document.createElement("div");
+					contactDiv.className = "contact-item";
+					contactDiv.style.cssText = `
+						padding: 16px 20px;
+						border-bottom: 1px solid #f0f0f0;
+						cursor: pointer;
+						transition: all 0.2s ease;
+						background: white;
+					`;
+
+					// Create safe name for onclick handlers
+					const safeName = contact.name
+						.replace(/'/g, "\\'")
+						.replace(/"/g, '\\"');
+
+					// Build phone lines HTML
+					let phoneLines = "";
+					uniqueNumbers.forEach((phoneObj) => {
+						const cleanNumber = phoneObj.number.replace(/\D/g, "");
+						const displayNumber = formatPhoneNumber(
+							phoneObj.number,
+						);
+						const phoneType = phoneObj.type
+							? phoneObj.type
+							: "Phone";
+						const safePhone = cleanNumber
+							.replace(/'/g, "\\'")
+							.replace(/"/g, '\\"');
+
+						phoneLines += `
+							<div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin: 2px 0; padding: 3px 0;">
+								<button onclick="event.stopPropagation(); document.getElementById('callNumber').value = '${safePhone}'; setView('phone'); log('Selected: ${safeName} - ${displayNumber}');"
+									style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-family: monospace; font-size: 12px; padding: 0; text-align: left;">
+									${displayNumber}
+								</button>
+								<span style="font-size: 10px; color: #888; text-transform: capitalize; min-width: 50px; text-align: left;">
+									${phoneType.toLowerCase()}
+								</span>
+							</div>
+						`;
+					});
+
+					// Create the contact display HTML
+					contactDiv.innerHTML = `
+						<div style="padding: 6px 0;">
+							<div style="font-weight: 600; font-size: 14px; color: #333; margin-bottom: 6px;">
+								${contact.name}
+							</div>
+							${phoneLines}
+						</div>
+					`;
+
+					// Add hover effects
+					contactDiv.addEventListener("mouseenter", () => {
+						contactDiv.style.backgroundColor = "#f5f5f5";
+					});
+					contactDiv.addEventListener("mouseleave", () => {
+						contactDiv.style.backgroundColor = "white";
+					});
+
+					contactsList.appendChild(contactDiv);
+				});
+			}
+
+			window.signOutGoogle = function () {
+				localStorage.removeItem("google_access_token");
+				googleAccessToken = null;
+				googleContacts = [];
+				log("Signed out from Google");
+
+				// Clear contacts list
+				const contactsList = document.getElementById("contactsList");
+				if (contactsList) {
+					contactsList.innerHTML = "";
+				}
+
+				// Update UI
+				document.getElementById("notSignedIn").style.display = "block";
+				document.getElementById("signedIn").style.display = "none";
+			};
+
+			function updateAuthUI(isSignedIn) {
+				if (isSignedIn) {
+					document.getElementById("notSignedIn").style.display =
+						"none";
+					document.getElementById("signedIn").style.display = "block";
+				} else {
+					document.getElementById("notSignedIn").style.display =
+						"block";
+					document.getElementById("signedIn").style.display = "none";
+				}
+			}
+
+			window.filterContacts = function () {
+				const query = document
+					.getElementById("contactSearch")
+					.value.toLowerCase();
+
+				if (query === "") {
+					renderContacts(googleContacts);
+					return;
+				}
+
+				const filtered = googleContacts.filter((contact) => {
+					// Search in contact name
+					const nameMatch = contact.name
+						.toLowerCase()
+						.includes(query);
+					
+					// Search in phone numbers - check both formatted and raw numbers
+					const phoneNumbers = contact.phoneNumbers || [];
+					const phoneMatch = phoneNumbers.some((phoneObj) => {
+						const phoneNumber = phoneObj.number || "";
+						// Search in both the raw number and cleaned number
+						const cleanNumber = phoneNumber.replace(/\D/g, "");
+						return (
+							phoneNumber.toLowerCase().includes(query) ||
+							cleanNumber.includes(query)
+						);
+					});
+					
+					return nameMatch || phoneMatch;
+				});
+
+				renderContacts(filtered);
+			};
 
 			// Make outgoing call
 			function makeCall() {
@@ -1547,7 +2184,11 @@
 									stopRinging();
 									sessionRingingStarted = false;
 								}
-								if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+								if (
+									userAgent.transport &&
+									userAgent.transport.ws &&
+									webSocketMessageHandler
+								) {
 									userAgent.transport.ws.removeEventListener(
 										"message",
 										webSocketMessageHandler,
@@ -1560,7 +2201,11 @@
 									stopRinging();
 									sessionRingingStarted = false;
 								}
-								if (userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
+								if (
+									userAgent.transport &&
+									userAgent.transport.ws &&
+									webSocketMessageHandler
+								) {
 									userAgent.transport.ws.removeEventListener(
 										"message",
 										webSocketMessageHandler,
@@ -1801,104 +2446,104 @@
 					});
 
 					session.on("progress", (response) => {
-					if (
-						response &&
-						response.status_code &&
-						response.reason_phrase
-					) {
-						log(
-							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-						);
-
 						if (
-							!ringingStarted &&
-							(response.status_code === 180 ||
-								response.status_code === 183)
+							response &&
+							response.status_code &&
+							response.reason_phrase
 						) {
-							startRinging();
-							ringingStarted = true;
-						}
+							log(
+								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+							);
 
-						// Mute early media if we receive 183
-						if (response.status_code === 183) {
-							const remoteAudio =
-								document.getElementById("remoteAudio");
-							if (remoteAudio) {
-								remoteAudio.volume = 0; // Silence server audio during ringing
-								log("Early media muted during ringing");
+							if (
+								!ringingStarted &&
+								(response.status_code === 180 ||
+									response.status_code === 183)
+							) {
+								startRinging();
+								ringingStarted = true;
+							}
+
+							// Mute early media if we receive 183
+							if (response.status_code === 183) {
+								const remoteAudio =
+									document.getElementById("remoteAudio");
+								if (remoteAudio) {
+									remoteAudio.volume = 0; // Silence server audio during ringing
+									log("Early media muted during ringing");
+								}
 							}
 						}
-					}
-				});
+					});
 
-				session.on("terminated", (message, cause) => {
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
-					log("Call ended" + (cause ? ": " + cause : ""));
-					endCall();
-				});
+					session.on("terminated", (message, cause) => {
+						if (ringingStarted) {
+							stopRinging();
+							ringingStarted = false;
+						}
+						log("Call ended" + (cause ? ": " + cause : ""));
+						endCall();
+					});
 
-				session.on("failed", (response, cause) => {
-					if (
-						response &&
-						response.status_code &&
-						response.reason_phrase
-					) {
-						log(
-							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-						);
-					}
+					session.on("failed", (response, cause) => {
+						if (
+							response &&
+							response.status_code &&
+							response.reason_phrase
+						) {
+							log(
+								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+							);
+						}
 
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
+						if (ringingStarted) {
+							stopRinging();
+							ringingStarted = false;
+						}
 
-					if (
-						cause &&
-						cause.includes("SESSION_DESCRIPTION_HANDLER_ERROR")
-					) {
-						log(
-							"⚠️ Media negotiation failed - incompatible media format",
-						);
-						alert(
-							"Call failed: Media format incompatibility.\nContact VoiceTel support for WebRTC configuration.",
-						);
-					} else {
-						log("Call failed: " + (cause || "Unknown error"));
-					}
-					endCall();
-				});
+						if (
+							cause &&
+							cause.includes("SESSION_DESCRIPTION_HANDLER_ERROR")
+						) {
+							log(
+								"⚠️ Media negotiation failed - incompatible media format",
+							);
+							alert(
+								"Call failed: Media format incompatibility.\nContact VoiceTel support for WebRTC configuration.",
+							);
+						} else {
+							log("Call failed: " + (cause || "Unknown error"));
+						}
+						endCall();
+					});
 
-				session.on("rejected", (response, cause) => {
-					if (
-						response &&
-						response.status_code &&
-						response.reason_phrase
-					) {
-						log(
-							`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
-						);
-					}
-					log("Call rejected" + (cause ? ": " + cause : ""));
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
-					endCall();
-				});
+					session.on("rejected", (response, cause) => {
+						if (
+							response &&
+							response.status_code &&
+							response.reason_phrase
+						) {
+							log(
+								`SIP/2.0 ${response.status_code} ${response.reason_phrase}`,
+							);
+						}
+						log("Call rejected" + (cause ? ": " + cause : ""));
+						if (ringingStarted) {
+							stopRinging();
+							ringingStarted = false;
+						}
+						endCall();
+					});
 
-				session.on("bye", (request) => {
-					log("SIP BYE received");
-					log("Call ended by remote");
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
-					endCall();
-				});
+					session.on("bye", (request) => {
+						log("SIP BYE received");
+						log("Call ended by remote");
+						if (ringingStarted) {
+							stopRinging();
+							ringingStarted = false;
+						}
+						endCall();
+					});
 
 					session.on("accepted", (response) => {
 						if (
@@ -1918,95 +2563,112 @@
 
 						log("Call connected");
 
-					if (
-						currentSession &&
-						currentSession.sessionDescriptionHandler &&
-						currentSession.sessionDescriptionHandler.peerConnection
-					) {
-						const pc =
+						if (
+							currentSession &&
+							currentSession.sessionDescriptionHandler &&
 							currentSession.sessionDescriptionHandler
-								.peerConnection;
-						const remoteDesc = pc.remoteDescription;
-						if (remoteDesc && remoteDesc.sdp) {
-							if (remoteDesc.sdp.includes("telephone-event")) {
-								log("Remote supports RFC 2833 telephone-event");
-							} else {
-								log(
-									"⚠️ Remote does NOT support telephone-event - will use SIP INFO for DTMF",
-								);
+								.peerConnection
+						) {
+							const pc =
+								currentSession.sessionDescriptionHandler
+									.peerConnection;
+							const remoteDesc = pc.remoteDescription;
+							if (remoteDesc && remoteDesc.sdp) {
+								if (
+									remoteDesc.sdp.includes("telephone-event")
+								) {
+									log(
+										"Remote supports RFC 2833 telephone-event",
+									);
+								} else {
+									log(
+										"⚠️ Remote does NOT support telephone-event - will use SIP INFO for DTMF",
+									);
+								}
 							}
 						}
-					}
 
-					document.getElementById("callNumber").value = "";
-					document.getElementById("callNumber").placeholder =
-						"Type or press dialpad for DTMF";
-					document.getElementById("callNumber").focus();
+						document.getElementById("callNumber").value = "";
+						document.getElementById("callNumber").placeholder =
+							"Type or press dialpad for DTMF";
+						document.getElementById("callNumber").focus();
 
-					if (ringingStarted) {
-						stopRinging();
-						ringingStarted = false;
-					}
-					activeCall = true;
-					log("Call connected");
-
-					startCallTimer();
-
-					try {
-						const pc =
-							session.sessionDescriptionHandler.peerConnection;
-						const remoteStream = new MediaStream();
-						pc.getReceivers().forEach((receiver) => {
-							if (receiver.track) {
-								remoteStream.addTrack(receiver.track);
-							}
-						});
-
-						const remoteAudio =
-							document.getElementById("remoteAudio");
-						remoteAudio.srcObject = remoteStream;
-						remoteAudio.volume = 1.0; // Unmute when call connects
-					} catch (e) {
-						log("Error setting up audio: " + e.message);
-					}
-
-					// Auto-start recording if enabled (only when call is answered/connected)
-					const recordingEnabled = document.getElementById("enableCallRecording")?.checked || false;
-					if (recordingEnabled && activeCall && session === currentSession) {
-						// Wait a bit for audio tracks to be fully ready after call is answered
-						setTimeout(async () => {
-							// Double-check call is still active before starting recording
-							if (activeCall && currentSession && currentSession === session) {
-								await startRecording();
-							}
-						}, 500); // Small delay to ensure audio tracks are ready
-					}
-				});
-
-				session.on("trackAdded", () => {
-					try {
-						const pc =
-							session.sessionDescriptionHandler.peerConnection;
-						const remoteStream = new MediaStream();
-						pc.getReceivers().forEach((receiver) => {
-							if (receiver.track) {
-								remoteStream.addTrack(receiver.track);
-							}
-						});
-
-						const remoteAudio =
-							document.getElementById("remoteAudio");
-						remoteAudio.srcObject = remoteStream;
-
-						// Mute if still ringing (early media)
 						if (ringingStarted) {
-							remoteAudio.volume = 0;
-							log("Early media audio track muted");
+							stopRinging();
+							ringingStarted = false;
 						}
-					} catch (e) {
-						log("Error handling track: " + e.message);
-					}
-				});
+						activeCall = true;
+						log("Call connected");
+
+						startCallTimer();
+
+						try {
+							const pc =
+								session.sessionDescriptionHandler
+									.peerConnection;
+							const remoteStream = new MediaStream();
+							pc.getReceivers().forEach((receiver) => {
+								if (receiver.track) {
+									remoteStream.addTrack(receiver.track);
+								}
+							});
+
+							const remoteAudio =
+								document.getElementById("remoteAudio");
+							remoteAudio.srcObject = remoteStream;
+							remoteAudio.volume = 1.0; // Unmute when call connects
+						} catch (e) {
+							log("Error setting up audio: " + e.message);
+						}
+
+						// Auto-start recording if enabled (only when call is answered/connected)
+						const recordingEnabled =
+							document.getElementById("enableCallRecording")
+								?.checked || false;
+						if (
+							recordingEnabled &&
+							activeCall &&
+							session === currentSession
+						) {
+							// Wait a bit for audio tracks to be fully ready after call is answered
+							setTimeout(async () => {
+								// Double-check call is still active before starting recording
+								if (
+									activeCall &&
+									currentSession &&
+									currentSession === session
+								) {
+									await startRecording();
+								}
+							}, 500); // Small delay to ensure audio tracks are ready
+						}
+					});
+
+					session.on("trackAdded", () => {
+						try {
+							const pc =
+								session.sessionDescriptionHandler
+									.peerConnection;
+							const remoteStream = new MediaStream();
+							pc.getReceivers().forEach((receiver) => {
+								if (receiver.track) {
+									remoteStream.addTrack(receiver.track);
+								}
+							});
+
+							const remoteAudio =
+								document.getElementById("remoteAudio");
+							remoteAudio.srcObject = remoteStream;
+
+							// Mute if still ringing (early media)
+							if (ringingStarted) {
+								remoteAudio.volume = 0;
+								log("Early media audio track muted");
+							}
+						} catch (e) {
+							log("Error handling track: " + e.message);
+						}
+					});
 				}
 			}
 
@@ -2063,26 +2725,34 @@
 
 			async function endCall() {
 				// Clean up WebSocket event listeners
-				if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-					userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+				if (
+					userAgent &&
+					userAgent.transport &&
+					userAgent.transport.ws &&
+					webSocketMessageHandler
+				) {
+					userAgent.transport.ws.removeEventListener(
+						"message",
+						webSocketMessageHandler,
+					);
 					webSocketMessageHandler = null;
 				}
-				
+
 				// Clean up ringing audio
 				if (ringingAudio) {
 					ringingAudio.stop();
 					ringingAudio = null;
 				}
-				
+
 				// Clean up call timer
 				stopCallTimer();
-				
+
 				// Stop recording if active and get filename (must be done before saving history)
 				let recordingFilename = null;
 				if (isRecording) {
 					recordingFilename = await stopRecording();
 				}
-				
+
 				// Save call to history (with recording filename if available)
 				try {
 					if (__callDirection === "outgoing") {
@@ -2099,7 +2769,7 @@
 							num,
 							document.getElementById("callDuration")
 								.textContent || "00:00",
-							recordingFilename
+							recordingFilename,
 						);
 					} else if (__callDirection === "incoming") {
 						const num =
@@ -2111,7 +2781,7 @@
 							num,
 							document.getElementById("callDuration")
 								.textContent || "00:00",
-							recordingFilename
+							recordingFilename,
 						);
 					}
 				} catch (e) {
@@ -2162,12 +2832,13 @@
 
 			// Recording functions
 			function getFileExtension(mimeType) {
-				if (mimeType.includes('webm')) return 'webm';
-				if (mimeType.includes('ogg')) return 'ogg';
-				if (mimeType.includes('mp4')) return 'm4a';  // MP4 audio is typically M4A
-				if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3';
-				if (mimeType.includes('wav')) return 'wav';
-				return 'webm'; // Default
+				if (mimeType.includes("webm")) return "webm";
+				if (mimeType.includes("ogg")) return "ogg";
+				if (mimeType.includes("mp4")) return "m4a"; // MP4 audio is typically M4A
+				if (mimeType.includes("mpeg") || mimeType.includes("mp3"))
+					return "mp3";
+				if (mimeType.includes("wav")) return "wav";
+				return "webm"; // Default
 			}
 
 			async function startRecording() {
@@ -2177,24 +2848,29 @@
 				}
 
 				// Check if recording is enabled in settings
-				const recordingEnabled = document.getElementById("enableCallRecording")?.checked || false;
+				const recordingEnabled =
+					document.getElementById("enableCallRecording")?.checked ||
+					false;
 				if (!recordingEnabled) {
 					log("Call recording is disabled in settings");
 					return;
 				}
 
 				try {
-					const pc = currentSession.sessionDescriptionHandler.peerConnection;
-					
+					const pc =
+						currentSession.sessionDescriptionHandler.peerConnection;
+
 					if (!pc) {
 						throw new Error("PeerConnection not available");
 					}
 
 					log("Checking audio tracks...");
-					
+
 					// Create audio context for mixing
-					recordingAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-					recordingDestination = recordingAudioContext.createMediaStreamDestination();
+					recordingAudioContext = new (window.AudioContext ||
+						window.webkitAudioContext)();
+					recordingDestination =
+						recordingAudioContext.createMediaStreamDestination();
 					recordingStream = recordingDestination.stream;
 
 					let tracksAdded = 0;
@@ -2204,13 +2880,20 @@
 					log(`Found ${receivers.length} receivers`);
 					receivers.forEach((receiver, idx) => {
 						if (receiver.track && receiver.track.kind === "audio") {
-							log(`Adding remote audio track ${idx}: ${receiver.track.id}, enabled: ${receiver.track.enabled}, muted: ${receiver.track.muted}`);
+							log(
+								`Adding remote audio track ${idx}: ${receiver.track.id}, enabled: ${receiver.track.enabled}, muted: ${receiver.track.muted}`,
+							);
 							try {
-								const remoteSource = recordingAudioContext.createMediaStreamSource(new MediaStream([receiver.track]));
+								const remoteSource =
+									recordingAudioContext.createMediaStreamSource(
+										new MediaStream([receiver.track]),
+									);
 								remoteSource.connect(recordingDestination);
 								tracksAdded++;
 							} catch (e) {
-								log(`Failed to add remote track ${idx}: ${e.message}`);
+								log(
+									`Failed to add remote track ${idx}: ${e.message}`,
+								);
 								console.error("Remote track error:", e);
 							}
 						}
@@ -2221,24 +2904,37 @@
 					log(`Found ${senders.length} senders`);
 					senders.forEach((sender, idx) => {
 						if (sender.track && sender.track.kind === "audio") {
-							log(`Adding local audio track ${idx}: ${sender.track.id}, enabled: ${sender.track.enabled}, muted: ${sender.track.muted}`);
+							log(
+								`Adding local audio track ${idx}: ${sender.track.id}, enabled: ${sender.track.enabled}, muted: ${sender.track.muted}`,
+							);
 							try {
-								const localSource = recordingAudioContext.createMediaStreamSource(new MediaStream([sender.track]));
+								const localSource =
+									recordingAudioContext.createMediaStreamSource(
+										new MediaStream([sender.track]),
+									);
 								localSource.connect(recordingDestination);
 								tracksAdded++;
 							} catch (e) {
-								log(`Failed to add local track ${idx}: ${e.message}`);
+								log(
+									`Failed to add local track ${idx}: ${e.message}`,
+								);
 								console.error("Local track error:", e);
 							}
 						}
 					});
 
 					if (tracksAdded === 0) {
-						throw new Error("No audio tracks available for recording");
+						throw new Error(
+							"No audio tracks available for recording",
+						);
 					}
 
-					log(`Connected ${tracksAdded} audio tracks to recording stream`);
-					log(`Recording stream has ${recordingStream.getAudioTracks().length} tracks`);
+					log(
+						`Connected ${tracksAdded} audio tracks to recording stream`,
+					);
+					log(
+						`Recording stream has ${recordingStream.getAudioTracks().length} tracks`,
+					);
 
 					// Check if MediaRecorder is available
 					if (!window.MediaRecorder) {
@@ -2246,32 +2942,36 @@
 					}
 
 					if (!MediaRecorder.isTypeSupported) {
-						throw new Error("MediaRecorder.isTypeSupported not available");
+						throw new Error(
+							"MediaRecorder.isTypeSupported not available",
+						);
 					}
 
 					// Find supported MIME type
 					const options = [
-						'audio/webm;codecs=opus',  // Best quality, widely supported
-						'audio/webm',              // WebM fallback
-						'audio/ogg;codecs=opus',   // OGG/Opus
-						'audio/mp4',               // MP4/AAC
-						'audio/mpeg',              // MP3 (unlikely to be supported)
-						'audio/wav'                // WAV (unlikely to be supported)
+						"audio/webm;codecs=opus", // Best quality, widely supported
+						"audio/webm", // WebM fallback
+						"audio/ogg;codecs=opus", // OGG/Opus
+						"audio/mp4", // MP4/AAC
+						"audio/mpeg", // MP3 (unlikely to be supported)
+						"audio/wav", // WAV (unlikely to be supported)
 					];
-					
+
 					log("Checking supported audio formats...");
 					let mimeType = null;
 					for (let option of options) {
 						const supported = MediaRecorder.isTypeSupported(option);
-						log(`  ${option}: ${supported ? '✓' : '✗'}`);
+						log(`  ${option}: ${supported ? "✓" : "✗"}`);
 						if (supported && !mimeType) {
 							mimeType = option;
 						}
 					}
-					
+
 					if (!mimeType) {
-						mimeType = 'audio/webm';
-						log(`No preferred format supported, using default: ${mimeType}`);
+						mimeType = "audio/webm";
+						log(
+							`No preferred format supported, using default: ${mimeType}`,
+						);
 					} else {
 						log(`Selected MIME type: ${mimeType}`);
 					}
@@ -2285,51 +2985,59 @@
 					recordedChunks = [];
 					log("Creating MediaRecorder...");
 					mediaRecorder = new MediaRecorder(recordingStream, {
-						mimeType: mimeType
+						mimeType: mimeType,
 					});
 
 					mediaRecorder.ondataavailable = (event) => {
 						if (event.data && event.data.size > 0) {
 							recordedChunks.push(event.data);
-							log(`Recording data chunk: ${event.data.size} bytes (total chunks: ${recordedChunks.length})`);
+							log(
+								`Recording data chunk: ${event.data.size} bytes (total chunks: ${recordedChunks.length})`,
+							);
 						}
 					};
 
 					mediaRecorder.onstop = async () => {
-						log(`Recording stopped. Total chunks: ${recordedChunks.length}, total size: ${recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0)} bytes`);
+						log(
+							`Recording stopped. Total chunks: ${recordedChunks.length}, total size: ${recordedChunks.reduce((sum, chunk) => sum + chunk.size, 0)} bytes`,
+						);
 						await saveRecording();
 					};
 
 					mediaRecorder.onerror = (event) => {
-						log(`Recording error: ${event.error || 'Unknown error'}`);
+						log(
+							`Recording error: ${event.error || "Unknown error"}`,
+						);
 						console.error("Recording error:", event);
 						isRecording = false;
 					};
 
 					// Store call info for recording metadata
 					recordingCallStartTime = callStartTime || Date.now();
-					recordingCallerNumber = __callDirection === "outgoing" 
-						? (document.getElementById("callNumber").value || "Unknown")
-						: (__incomingRaw || __incomingDisplay || "Unknown");
+					recordingCallerNumber =
+						__callDirection === "outgoing"
+							? document.getElementById("callNumber").value ||
+								"Unknown"
+							: __incomingRaw || __incomingDisplay || "Unknown";
 					recordingCallDirection = __callDirection || "unknown";
-					
+
 					// Start recording
 					log("Starting MediaRecorder...");
 					mediaRecorder.start(1000); // Collect data every second
 					isRecording = true;
 					log("Recording started successfully");
-					
+
 					// Update UI to show recording indicator
 					const callStatus = document.getElementById("callStatus");
 					if (callStatus) {
-						callStatus.textContent = "Call in progress 🎙️ Recording";
+						callStatus.textContent =
+							"Call in progress 🎙️ Recording";
 					}
-
 				} catch (error) {
 					log(`Failed to start recording: ${error.message}`);
 					console.error("Recording start error:", error);
 					isRecording = false;
-					
+
 					// Clean up on error
 					if (recordingAudioContext) {
 						try {
@@ -2349,18 +3057,20 @@
 
 				try {
 					// Store mimeType before stopping
-					const mimeType = mediaRecorder.mimeType || 'audio/webm';
-					
+					const mimeType = mediaRecorder.mimeType || "audio/webm";
+
 					// Generate filename before stopping (so we can use it for history entry)
 					const callerNumber = recordingCallerNumber || "Unknown";
-					const filenameTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+					const filenameTimestamp = new Date()
+						.toISOString()
+						.replace(/[:.]/g, "-");
 					const filename = `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mimeType)}`;
 					currentRecordingFilename = filename;
-					
-					if (mediaRecorder.state === 'recording') {
+
+					if (mediaRecorder.state === "recording") {
 						mediaRecorder.stop();
 					}
-					
+
 					isRecording = false;
 					log("Recording stopped, saving file...");
 
@@ -2371,12 +3081,12 @@
 						recordingDestination = null;
 						recordingStream = null;
 					}
-					
+
 					// Wait a bit for saveRecording to complete (it's called from MediaRecorder's onstop event)
-					await new Promise(resolve => setTimeout(resolve, 500));
-					
+					await new Promise((resolve) => setTimeout(resolve, 500));
+
 					const savedFilename = currentRecordingFilename;
-					
+
 					// Clear recording metadata
 					recordingCallStartTime = null;
 					recordingCallerNumber = null;
@@ -2390,7 +3100,6 @@
 					}
 
 					return savedFilename;
-
 				} catch (error) {
 					log(`Failed to stop recording: ${error.message}`);
 					console.error("Recording stop error:", error);
@@ -2408,58 +3117,74 @@
 
 				try {
 					// Store mimeType before clearing mediaRecorder
-					const mimeType = mediaRecorder ? mediaRecorder.mimeType : 'audio/webm';
+					const mimeType = mediaRecorder
+						? mediaRecorder.mimeType
+						: "audio/webm";
 					const blob = new Blob(recordedChunks, { type: mimeType });
-					
+
 					// Use filename generated in stopRecording() or generate new one
 					const callerNumber = recordingCallerNumber || "Unknown";
-					const callTimestamp = recordingCallStartTime ? new Date(recordingCallStartTime).toISOString() : new Date().toISOString();
-					const filename = currentRecordingFilename || (() => {
-						const filenameTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
-						return `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mimeType)}`;
-					})();
+					const callTimestamp = recordingCallStartTime
+						? new Date(recordingCallStartTime).toISOString()
+						: new Date().toISOString();
+					const filename =
+						currentRecordingFilename ||
+						(() => {
+							const filenameTimestamp = new Date()
+								.toISOString()
+								.replace(/[:.]/g, "-");
+							return `call-${callerNumber}-${filenameTimestamp}.${getFileExtension(mimeType)}`;
+						})();
 
 					// In Electron, we'll use the IPC to save the file
 					// No fallback - recordings must be saved via Electron IPC
-					if (window.electronAPI && window.electronAPI.saveRecording) {
+					if (
+						window.electronAPI &&
+						window.electronAPI.saveRecording
+					) {
 						try {
 							// Convert blob to base64
-							const base64 = await new Promise((resolve, reject) => {
-								const reader = new FileReader();
-								reader.onloadend = () => {
-									const base64String = reader.result.split(',')[1];
-									resolve(base64String);
-								};
-								reader.onerror = reject;
-								reader.readAsDataURL(blob);
-							});
+							const base64 = await new Promise(
+								(resolve, reject) => {
+									const reader = new FileReader();
+									reader.onloadend = () => {
+										const base64String =
+											reader.result.split(",")[1];
+										resolve(base64String);
+									};
+									reader.onerror = reject;
+									reader.readAsDataURL(blob);
+								},
+							);
 
 							await window.electronAPI.saveRecording({
 								filename: filename,
 								data: base64,
-								mimeType: mimeType
+								mimeType: mimeType,
 							});
-							
+
 							// Update call history with recording filename
-							await Storage.updateCallHistoryWithRecording(filename);
+							await Storage.updateCallHistoryWithRecording(
+								filename,
+							);
 						} catch (error) {
 							log(`Failed to save recording: ${error.message}`);
 							console.error("Save recording error:", error);
 						}
 					} else {
-						console.error("Electron API not available - recording cannot be saved");
+						console.error(
+							"Electron API not available - recording cannot be saved",
+						);
 					}
 
 					// Clear recorded chunks (this signals that saveRecording completed)
 					recordedChunks = [];
 					mediaRecorder = null;
-
 				} catch (error) {
 					log(`Failed to save recording: ${error.message}`);
 					console.error("Save recording error:", error);
 				}
 			}
-
 
 			function appendNumber(num) {
 				const input = document.getElementById("callNumber");
@@ -2525,6 +3250,7 @@
 				const sections = {
 					call: document.getElementById("callSection"),
 					config: document.getElementById("configSection"),
+					contacts: document.getElementById("contactsSection"),
 					log: document.getElementById("logSection"),
 					history: document.getElementById("historySection"),
 				};
@@ -2537,19 +3263,42 @@
 					}
 				});
 
-				// Show requested view
+				// Remove active class from all header buttons
+				document.querySelectorAll(".header-toggle").forEach((btn) => {
+					btn.classList.remove("active");
+				});
+
+				// Show requested view and activate corresponding button
 				if (view === "phone") {
 					sections.call.classList.remove("hidden");
 					sections.call.classList.add("visible");
+					document
+						.querySelector('[onclick="showPhone()"]')
+						?.classList.add("active");
 				} else if (view === "settings") {
 					sections.config.classList.add("visible");
 					sections.config.classList.remove("hidden");
+					document
+						.querySelector('[onclick="showSettings()"]')
+						?.classList.add("active");
+				} else if (view === "contacts") {
+					sections.contacts.classList.add("visible");
+					sections.contacts.classList.remove("hidden");
+					document
+						.querySelector('[onclick="showContacts()"]')
+						?.classList.add("active");
 				} else if (view === "log") {
 					sections.log.classList.add("visible");
 					sections.log.classList.remove("hidden");
+					document
+						.querySelector('[onclick="showLog()"]')
+						?.classList.add("active");
 				} else if (view === "history") {
 					sections.history.classList.add("visible");
 					sections.history.classList.remove("hidden");
+					document
+						.querySelector('[onclick="showHistory()"]')
+						?.classList.add("active");
 					renderCallHistory();
 				}
 
@@ -2564,10 +3313,21 @@
 			}
 
 			// Update navigation functions to use setView once it's defined
-			window.showPhone = function() { setView("phone"); };
-			window.showSettings = function() { setView("settings"); };
-			window.showLog = function() { setView("log"); };
-			window.showHistory = function() { setView("history"); };
+			window.showPhone = function () {
+				setView("phone");
+			};
+			window.showContacts = function () {
+				setView("contacts");
+			};
+			window.showSettings = function () {
+				setView("settings");
+			};
+			window.showLog = function () {
+				setView("log");
+			};
+			window.showHistory = function () {
+				setView("history");
+			};
 
 			// Call history functions
 			async function renderCallHistory() {
@@ -2585,7 +3345,7 @@
 					return;
 				}
 
-				el.innerHTML = '';
+				el.innerHTML = "";
 				history.forEach((item, index) => {
 					let icon = "❓"; // Default for unknown
 					let callType = "Unknown";
@@ -2606,31 +3366,47 @@
 
 					// Format phone number consistently
 					let displayNumber = item.number;
-					const cleanNumber = item.number.replace(/\D/g, '');
-					
+					const cleanNumber = item.number.replace(/\D/g, "");
+
 					if (cleanNumber.length === 10) {
 						// US format: (555) 123-4567
-						displayNumber = `(${cleanNumber.slice(0,3)}) ${cleanNumber.slice(3,6)}-${cleanNumber.slice(6)}`;
-					} else if (cleanNumber.length === 11 && cleanNumber.startsWith('1')) {
+						displayNumber = `(${cleanNumber.slice(0, 3)}) ${cleanNumber.slice(3, 6)}-${cleanNumber.slice(6)}`;
+					} else if (
+						cleanNumber.length === 11 &&
+						cleanNumber.startsWith("1")
+					) {
 						// 11 digits starting with 1: show as 10-digit format (555) 123-4567
-						displayNumber = `(${cleanNumber.slice(1,4)}) ${cleanNumber.slice(4,7)}-${cleanNumber.slice(7)}`;
+						displayNumber = `(${cleanNumber.slice(1, 4)}) ${cleanNumber.slice(4, 7)}-${cleanNumber.slice(7)}`;
 					} else if (cleanNumber.length === 7) {
 						// Local format: 123-4567
-						displayNumber = `${cleanNumber.slice(0,3)}-${cleanNumber.slice(3)}`;
+						displayNumber = `${cleanNumber.slice(0, 3)}-${cleanNumber.slice(3)}`;
 					} else if (cleanNumber.length > 11) {
 						// International format: +XX XXX XXX XXXX
-						const countryCode = cleanNumber.slice(0, cleanNumber.length - 10);
-						const areaCode = cleanNumber.slice(cleanNumber.length - 10, cleanNumber.length - 7);
-						const firstPart = cleanNumber.slice(cleanNumber.length - 7, cleanNumber.length - 4);
-						const lastPart = cleanNumber.slice(cleanNumber.length - 4);
+						const countryCode = cleanNumber.slice(
+							0,
+							cleanNumber.length - 10,
+						);
+						const areaCode = cleanNumber.slice(
+							cleanNumber.length - 10,
+							cleanNumber.length - 7,
+						);
+						const firstPart = cleanNumber.slice(
+							cleanNumber.length - 7,
+							cleanNumber.length - 4,
+						);
+						const lastPart = cleanNumber.slice(
+							cleanNumber.length - 4,
+						);
 						displayNumber = `+${countryCode} ${areaCode} ${firstPart} ${lastPart}`;
 					}
 
 					const timestamp = new Date(item.timestamp).toLocaleString();
-					const safeNumber = cleanNumber.replace(/'/g, "\\'").replace(/"/g, '\\"');
-					
-					const historyDiv = document.createElement('div');
-					historyDiv.className = 'contact-item';
+					const safeNumber = cleanNumber
+						.replace(/'/g, "\\'")
+						.replace(/"/g, '\\"');
+
+					const historyDiv = document.createElement("div");
+					historyDiv.className = "contact-item";
 					historyDiv.style.cssText = `
 						padding: 16px 20px;
 						border-bottom: 1px solid #f0f0f0;
@@ -2638,18 +3414,18 @@
 						transition: all 0.2s ease;
 						background: white;
 					`;
-					
+
 					// Check if this call has a recording (stored directly in history entry)
 					const recordingFilename = item.recording || null;
-					
+
 					// Create the history display HTML
-					let recordingHTML = '';
+					let recordingHTML = "";
 					if (recordingFilename) {
 						recordingHTML = `
 							<div style="margin-top: 8px; margin-left: 30px;">
-								<audio 
-									id="history-recording-${index}" 
-									controls 
+								<audio
+									id="history-recording-${index}"
+									controls
 									controlsList="nodownload"
 									style="width: 100%; max-width: 350px; height: 32px;"
 									preload="none"
@@ -2660,13 +3436,13 @@
 							</div>
 						`;
 					}
-					
+
 					const historyHTML = `
 						<div style="padding: 6px 0;">
 							<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
 								<span style="font-size: 18px;">${icon}</span>
 								<div style="flex: 1;">
-									<button onclick="redial('${safeNumber}')" 
+									<button onclick="redial('${safeNumber}')"
 										style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-family: monospace; font-size: 12px; padding: 0; text-align: left; font-weight: 600;">
 										${displayNumber}
 									</button>
@@ -2681,71 +3457,126 @@
 							${recordingHTML}
 						</div>
 					`;
-					
+
 					historyDiv.innerHTML = historyHTML;
-					
-					historyDiv.addEventListener('mouseenter', () => {
-						historyDiv.style.backgroundColor = '#f5f5f5';
+
+					historyDiv.addEventListener("mouseenter", () => {
+						historyDiv.style.backgroundColor = "#f5f5f5";
 					});
-					historyDiv.addEventListener('mouseleave', () => {
-						historyDiv.style.backgroundColor = 'transparent';
+					historyDiv.addEventListener("mouseleave", () => {
+						historyDiv.style.backgroundColor = "transparent";
 					});
-					
+
 					el.appendChild(historyDiv);
-					
+
 					// Load recording audio source if available
 					if (recordingFilename) {
 						setTimeout(async () => {
-							const audioEl = document.getElementById(`history-recording-${index}`);
-							if (audioEl && window.electronAPI && window.electronAPI.getRecordingFileUrl) {
+							const audioEl = document.getElementById(
+								`history-recording-${index}`,
+							);
+							if (
+								audioEl &&
+								window.electronAPI &&
+								window.electronAPI.getRecordingFileUrl
+							) {
 								try {
-									const result = await window.electronAPI.getRecordingFileUrl(recordingFilename);
-									if (result && result.url && result.url.startsWith('data:')) {
+									const result =
+										await window.electronAPI.getRecordingFileUrl(
+											recordingFilename,
+										);
+									if (
+										result &&
+										result.url &&
+										result.url.startsWith("data:")
+									) {
 										// Parse data URL
-										const [header, base64Data] = result.url.split(',');
+										const [header, base64Data] =
+											result.url.split(",");
 										if (base64Data) {
-											const mimeTypeMatch = header.match(/data:([^;]+)/);
-											const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'audio/webm';
-											
+											const mimeTypeMatch =
+												header.match(/data:([^;]+)/);
+											const mimeType = mimeTypeMatch
+												? mimeTypeMatch[1]
+												: "audio/webm";
+
 											// Configure audio element BEFORE setting src
-											audioEl.setAttribute('controls', '');
-											audioEl.setAttribute('preload', 'none');
-											audioEl.setAttribute('controlsList', 'nodownload');
-											audioEl.setAttribute('type', mimeType);
-											
+											audioEl.setAttribute(
+												"controls",
+												"",
+											);
+											audioEl.setAttribute(
+												"preload",
+												"none",
+											);
+											audioEl.setAttribute(
+												"controlsList",
+												"nodownload",
+											);
+											audioEl.setAttribute(
+												"type",
+												mimeType,
+											);
+
 											// Prevent right-click download
-											audioEl.addEventListener('contextmenu', (e) => {
-												e.preventDefault();
-												return false;
-											});
-											
+											audioEl.addEventListener(
+												"contextmenu",
+												(e) => {
+													e.preventDefault();
+													return false;
+												},
+											);
+
 											// Convert to Blob
-											const binaryString = atob(base64Data);
-											const bytes = new Uint8Array(binaryString.length);
-											for (let i = 0; i < binaryString.length; i++) {
-												bytes[i] = binaryString.charCodeAt(i);
+											const binaryString =
+												atob(base64Data);
+											const bytes = new Uint8Array(
+												binaryString.length,
+											);
+											for (
+												let i = 0;
+												i < binaryString.length;
+												i++
+											) {
+												bytes[i] =
+													binaryString.charCodeAt(i);
 											}
-											const blob = new Blob([bytes], { type: mimeType });
-											const blobUrl = URL.createObjectURL(blob);
-											
+											const blob = new Blob([bytes], {
+												type: mimeType,
+											});
+											const blobUrl =
+												URL.createObjectURL(blob);
+
 											// Set src AFTER all attributes are configured
 											audioEl.src = blobUrl;
-											
+
 											// Handle errors
-											audioEl.addEventListener('error', (e) => {
-												console.error('Audio playback error:', audioEl.error);
-												URL.revokeObjectURL(blobUrl);
-												if (e.cancelable) {
-													e.preventDefault();
-												}
-											}, { passive: false });
+											audioEl.addEventListener(
+												"error",
+												(e) => {
+													console.error(
+														"Audio playback error:",
+														audioEl.error,
+													);
+													URL.revokeObjectURL(
+														blobUrl,
+													);
+													if (e.cancelable) {
+														e.preventDefault();
+													}
+												},
+												{ passive: false },
+											);
 										}
 									} else if (result && result.url) {
 										// Direct URL (if protocol handler returns one)
 										audioEl.src = result.url;
 									}
 								} catch (error) {
-									console.error("Error loading recording:", error);
+									console.error(
+										"Error loading recording:",
+										error,
+									);
 								}
 							}
 						}, 100);
@@ -2763,8 +3594,8 @@
 					// Get all history entries to find recording filenames
 					const history = await Storage.getHistory();
 					const historyRecordings = history
-						.filter(item => item.recording)
-						.map(item => item.recording);
+						.filter((item) => item.recording)
+						.map((item) => item.recording);
 
 					// Remove duplicates
 					const allRecordings = [...new Set(historyRecordings)];
@@ -2778,20 +3609,33 @@
 
 					// Delete all recording files via Electron IPC
 					let deletedCount = 0;
-					if (window.electronAPI && window.electronAPI.deleteRecordingFile) {
+					if (
+						window.electronAPI &&
+						window.electronAPI.deleteRecordingFile
+					) {
 						for (const filename of allRecordings) {
 							try {
-								const result = await window.electronAPI.deleteRecordingFile(filename);
+								const result =
+									await window.electronAPI.deleteRecordingFile(
+										filename,
+									);
 								if (result && result.success) {
 									deletedCount++;
 								}
 							} catch (error) {
-								console.error(`Failed to delete ${filename}:`, error);
-								log(`Failed to delete ${filename}: ${error.message}`);
+								console.error(
+									`Failed to delete ${filename}:`,
+									error,
+								);
+								log(
+									`Failed to delete ${filename}: ${error.message}`,
+								);
 							}
 						}
 					} else {
-						log("Recording deletion not available (Electron API not found)");
+						log(
+							"Recording deletion not available (Electron API not found)",
+						);
 						return;
 					}
 
@@ -2804,7 +3648,7 @@
 					await localforage.setItem(Storage.HISTORY_KEY, history);
 
 					log(`Deleted ${deletedCount} recording files.`);
-					
+
 					// Refresh call history display
 					renderCallHistory();
 				} catch (error) {
@@ -2830,11 +3674,16 @@
 
 			async function playRecording(filename) {
 				try {
-					if (window.electronAPI && window.electronAPI.playRecording) {
+					if (
+						window.electronAPI &&
+						window.electronAPI.playRecording
+					) {
 						await window.electronAPI.playRecording(filename);
 						log(`Playing recording: ${filename}`);
 					} else {
-						log("Recording playback not available (Electron API not found)");
+						log(
+							"Recording playback not available (Electron API not found)",
+						);
 					}
 				} catch (e) {
 					log(`Failed to play recording: ${e.message}`);
@@ -2879,23 +3728,25 @@
 				if (window.electronAPI) {
 					log("Electron API available - recording features enabled");
 				} else {
-					log("Electron API not available - recording will use browser download fallback");
+					log(
+						"Electron API not available - recording will use browser download fallback",
+					);
 				}
 				// Update page title with version
 				document.title = `VoiceTel Phone v${APP_VERSION}`;
-				
+
 				// Set SIP server from configuration
 				const sipServerEl = document.getElementById("sipServer");
 				if (sipServerEl) {
 					sipServerEl.value = SIP_SERVER;
 				}
-				
+
 				// Update server info display
 				const serverInfoEl = document.getElementById("serverInfo");
 				if (serverInfoEl) {
 					serverInfoEl.textContent = `WebSocket: ${SIP_SERVER} | SIP Domain: ${SIP_DOMAIN}`;
 				}
-				
+
 				if (typeof SIP === "undefined") {
 					console.error("SIP.js library failed to load");
 					log("Error: SIP.js library not loaded");
@@ -2912,6 +3763,13 @@
 
 				// Load saved configuration
 				await Storage.loadConfig();
+
+				// Setup app state listeners and WebSocket monitoring
+				setupAppStateListeners();
+				setupWebSocketMonitoring();
+
+				// Initialize Google Auth and try to load contacts
+				initGoogleAuth();
 
 				// Setup input handlers
 				document
@@ -2985,7 +3843,7 @@
 					ringingAudio.stop();
 					ringingAudio = null;
 				}
-				
+
 				// Clear all timeouts
 				if (incomingCallTimeout) {
 					clearTimeout(incomingCallTimeout);
@@ -2995,13 +3853,21 @@
 					clearInterval(callTimer);
 					callTimer = null;
 				}
-				
+
 				// Clean up WebSocket event listeners
-				if (userAgent && userAgent.transport && userAgent.transport.ws && webSocketMessageHandler) {
-					userAgent.transport.ws.removeEventListener("message", webSocketMessageHandler);
+				if (
+					userAgent &&
+					userAgent.transport &&
+					userAgent.transport.ws &&
+					webSocketMessageHandler
+				) {
+					userAgent.transport.ws.removeEventListener(
+						"message",
+						webSocketMessageHandler,
+					);
 					webSocketMessageHandler = null;
 				}
-				
+
 				// Clean up SIP sessions
 				if (incomingSession) {
 					try {
@@ -3021,7 +3887,7 @@
 					} catch (e) {}
 					userAgent = null;
 				}
-				
+
 				// Reset all state
 				isRegistered = false;
 				registeredUsername = null;
@@ -3035,7 +3901,7 @@
 			window.addEventListener("pagehide", () => {
 				cleanupAllResources();
 			});
-			
+
 			// Also listen for visibility change as a fallback
 			document.addEventListener("visibilitychange", () => {
 				if (document.visibilityState === "hidden") {

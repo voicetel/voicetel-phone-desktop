@@ -2,14 +2,18 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const http = require("http");
 const packageJson = require("./package.json");
 
 // App version and configuration from package.json
 const APP_VERSION = packageJson.version;
 const SIP_DOMAIN = packageJson.config?.sipDomain || "tls.voicetel.com";
-const SIP_SERVER = packageJson.config?.sipServer || "wss://tls.voicetel.com:443";
+const SIP_SERVER =
+	packageJson.config?.sipServer || "wss://tls.voicetel.com:443";
 
 let mainWindow;
+let oauthServer = null;
+let oauthCallbacks = [];
 
 // Apply flags BEFORE app is ready - must be at the top
 // These are critical for WebRTC and media access
@@ -35,7 +39,6 @@ if (process.platform === "linux") {
 
 // Register before app is ready
 app.whenReady().then(() => {
-
 	createWindow();
 
 	app.on("activate", () => {
@@ -49,13 +52,13 @@ function createWindow() {
 	const iconPath = getIconPath();
 
 	// Get preload script path - __dirname works in both dev and packaged modes
-	const preloadPath = path.join(__dirname, 'preload.js');
-	
+	const preloadPath = path.join(__dirname, "preload.js");
+
 	// Verify preload file exists
 	if (!fs.existsSync(preloadPath)) {
 		console.error(`Preload script not found at: ${preloadPath}`);
 	}
-	
+
 	mainWindow = new BrowserWindow({
 		width: 600,
 		height: 1000,
@@ -84,33 +87,35 @@ function createWindow() {
 
 	mainWindow.once("ready-to-show", () => {
 		mainWindow.show();
-		
+
 		// Open DevTools in development, or allow toggling with F12
 		if (!app.isPackaged) {
 			mainWindow.webContents.openDevTools();
 		}
 	});
-	
+
 	// Toggle DevTools with F12 (works in both dev and production)
-	mainWindow.webContents.on('before-input-event', (event, input) => {
-		if (input.key === 'F12' || (input.key === 'I' && input.control && input.shift)) {
+	mainWindow.webContents.on("before-input-event", (event, input) => {
+		if (
+			input.key === "F12" ||
+			(input.key === "I" && input.control && input.shift)
+		) {
 			mainWindow.webContents.toggleDevTools();
 		}
 	});
 
 	// Load file directly for stable origin
 	const indexPath = path.join(__dirname, "index.html");
-	
+
 	// Inject configuration into the page before loading
-	mainWindow.webContents.once('dom-ready', () => {
+	mainWindow.webContents.once("dom-ready", () => {
 		mainWindow.webContents.executeJavaScript(`
 			window.VOICETEL_VERSION = "${APP_VERSION}";
 			window.VOICETEL_SIP_DOMAIN = "${SIP_DOMAIN}";
 			window.VOICETEL_SIP_SERVER = "${SIP_SERVER}";
 		`);
-		
 	});
-	
+
 	mainWindow.loadFile(indexPath);
 
 	mainWindow.on("closed", () => {
@@ -155,7 +160,6 @@ function createWindow() {
 		},
 	);
 
-
 	// Forward console messages from renderer (errors and warnings only)
 	mainWindow.webContents.on(
 		"console-message",
@@ -194,7 +198,6 @@ function createWindow() {
 		} catch (error) {
 			console.error("Could not check media devices:", error);
 		}
-
 	});
 
 	// Handle navigation
@@ -204,17 +207,26 @@ function createWindow() {
 			event.preventDefault();
 		}
 	});
-	
+
 	// Intercept download attempts to prevent audio blob downloads
-	mainWindow.webContents.session.on("will-download", (event, item, webContents) => {
-		const url = item.getURL();
-		const filename = item.getFilename();
-		
-		// If it's a blob URL for audio, cancel it
-		if (url.startsWith("blob:") && (filename.endsWith('.webm') || filename.endsWith('.wav') || filename.endsWith('.mp3') || filename.endsWith('.ogg'))) {
-			item.cancel();
-		}
-	});
+	mainWindow.webContents.session.on(
+		"will-download",
+		(event, item, webContents) => {
+			const url = item.getURL();
+			const filename = item.getFilename();
+
+			// If it's a blob URL for audio, cancel it
+			if (
+				url.startsWith("blob:") &&
+				(filename.endsWith(".webm") ||
+					filename.endsWith(".wav") ||
+					filename.endsWith(".mp3") ||
+					filename.endsWith(".ogg"))
+			) {
+				item.cancel();
+			}
+		},
+	);
 }
 
 function getIconPath() {
@@ -260,25 +272,24 @@ process.on("unhandledRejection", (reason, promise) => {
 async function handleSaveRecording(data) {
 	try {
 		const { filename, data: base64Data, mimeType } = data;
-		
+
 		// Convert base64 to buffer
-		const buffer = Buffer.from(base64Data, 'base64');
-		
+		const buffer = Buffer.from(base64Data, "base64");
+
 		// Get app's user data directory (similar to mobile's external files directory)
-		const userDataPath = app.getPath('userData');
-		const recordingsDir = path.join(userDataPath, 'CallRecordings');
-		
+		const userDataPath = app.getPath("userData");
+		const recordingsDir = path.join(userDataPath, "CallRecordings");
+
 		// Create CallRecordings directory if it doesn't exist
 		if (!fs.existsSync(recordingsDir)) {
 			fs.mkdirSync(recordingsDir, { recursive: true });
 		}
-		
+
 		const filePath = path.join(recordingsDir, filename);
-		
+
 		// Save file
 		fs.writeFileSync(filePath, buffer);
-		
-		
+
 		return { success: true, filePath: filePath };
 	} catch (error) {
 		console.error("Save recording error:", error);
@@ -289,22 +300,22 @@ async function handleSaveRecording(data) {
 async function handlePlayRecording(filename) {
 	try {
 		// Handle both string and object formats
-		const actualFilename = typeof filename === 'string' ? filename : filename.filename;
-		
+		const actualFilename =
+			typeof filename === "string" ? filename : filename.filename;
+
 		// Get app's user data directory (CallRecordings folder)
-		const userDataPath = app.getPath('userData');
-		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		const userDataPath = app.getPath("userData");
+		const recordingsDir = path.join(userDataPath, "CallRecordings");
 		const filePath = path.join(recordingsDir, actualFilename);
-		
+
 		// Check if file exists
 		if (!fs.existsSync(filePath)) {
 			throw new Error(`Recording file not found: ${actualFilename}`);
 		}
-		
+
 		// Open file with default application
 		await shell.openPath(filePath);
-		
-		
+
 		return { success: true, filePath: filePath };
 	} catch (error) {
 		console.error("Play recording error:", error);
@@ -315,19 +326,22 @@ async function handlePlayRecording(filename) {
 async function handleDeleteRecordingFile(filename) {
 	try {
 		// Get app's user data directory (CallRecordings folder)
-		const userDataPath = app.getPath('userData');
-		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		const userDataPath = app.getPath("userData");
+		const recordingsDir = path.join(userDataPath, "CallRecordings");
 		const filePath = path.join(recordingsDir, filename);
-		
+
 		// Check if file exists
 		if (!fs.existsSync(filePath)) {
-			return { success: true, filePath: filePath, message: 'File not found (already deleted)' };
+			return {
+				success: true,
+				filePath: filePath,
+				message: "File not found (already deleted)",
+			};
 		}
-		
+
 		// Delete file
 		fs.unlinkSync(filePath);
-		
-		
+
 		return { success: true, filePath: filePath };
 	} catch (error) {
 		console.error("Delete recording error:", error);
@@ -336,7 +350,7 @@ async function handleDeleteRecordingFile(filename) {
 }
 
 // Register IPC handlers using ipcMain.handle for contextBridge
-ipcMain.handle('save-recording', async (event, data) => {
+ipcMain.handle("save-recording", async (event, data) => {
 	try {
 		const result = await handleSaveRecording(data);
 		return result;
@@ -345,7 +359,7 @@ ipcMain.handle('save-recording', async (event, data) => {
 	}
 });
 
-ipcMain.handle('play-recording', async (event, filename) => {
+ipcMain.handle("play-recording", async (event, filename) => {
 	try {
 		const result = await handlePlayRecording(filename);
 		return result;
@@ -354,33 +368,33 @@ ipcMain.handle('play-recording', async (event, filename) => {
 	}
 });
 
-ipcMain.handle('get-recording-file-url', async (event, filename) => {
+ipcMain.handle("get-recording-file-url", async (event, filename) => {
 	try {
 		// Get app's user data directory (CallRecordings folder)
-		const userDataPath = app.getPath('userData');
-		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		const userDataPath = app.getPath("userData");
+		const recordingsDir = path.join(userDataPath, "CallRecordings");
 		const filePath = path.join(recordingsDir, filename);
-		
+
 		// Check if file exists
 		if (!fs.existsSync(filePath)) {
 			throw new Error(`Recording file not found: ${filename}`);
 		}
-		
+
 		// Read file and convert to base64 for blob URL
 		const fileBuffer = fs.readFileSync(filePath);
-		const base64 = fileBuffer.toString('base64');
-		
+		const base64 = fileBuffer.toString("base64");
+
 		// Determine MIME type from extension
 		const ext = path.extname(filename).toLowerCase();
-		let mimeType = 'audio/webm'; // default
-		if (ext === '.webm') mimeType = 'audio/webm';
-		else if (ext === '.ogg') mimeType = 'audio/ogg';
-		else if (ext === '.m4a') mimeType = 'audio/mp4';
-		else if (ext === '.wav') mimeType = 'audio/wav';
-		
+		let mimeType = "audio/webm"; // default
+		if (ext === ".webm") mimeType = "audio/webm";
+		else if (ext === ".ogg") mimeType = "audio/ogg";
+		else if (ext === ".m4a") mimeType = "audio/mp4";
+		else if (ext === ".wav") mimeType = "audio/wav";
+
 		// Return data URL that can be used as blob
 		const dataUrl = `data:${mimeType};base64,${base64}`;
-		
+
 		return { success: true, url: dataUrl, filePath: filePath };
 	} catch (error) {
 		console.error("Get recording file URL error:", error);
@@ -388,11 +402,11 @@ ipcMain.handle('get-recording-file-url', async (event, filename) => {
 	}
 });
 
-ipcMain.handle('get-downloads-path', async (event) => {
+ipcMain.handle("get-downloads-path", async (event) => {
 	try {
 		// Return app's CallRecordings directory path (not Downloads)
-		const userDataPath = app.getPath('userData');
-		const recordingsDir = path.join(userDataPath, 'CallRecordings');
+		const userDataPath = app.getPath("userData");
+		const recordingsDir = path.join(userDataPath, "CallRecordings");
 		return recordingsDir;
 	} catch (error) {
 		console.error("Get recordings path error:", error);
@@ -400,11 +414,156 @@ ipcMain.handle('get-downloads-path', async (event) => {
 	}
 });
 
-ipcMain.handle('delete-recording-file', async (event, filename) => {
+ipcMain.handle("delete-recording-file", async (event, filename) => {
 	try {
 		const result = await handleDeleteRecordingFile(filename);
 		return result;
 	} catch (error) {
 		throw error;
 	}
+});
+
+// Google OAuth handling for contacts
+ipcMain.handle("open-external", async (event, url) => {
+	try {
+		await shell.openExternal(url);
+		return { success: true };
+	} catch (error) {
+		console.error("Open external URL error:", error);
+		throw error;
+	}
+});
+
+// Initialize OAuth server once
+function initOAuthServer() {
+	if (oauthServer) {
+		return oauthServer;
+	}
+
+	oauthServer = http.createServer((req, res) => {
+		if (req.url.startsWith("/oauth2callback")) {
+			// Send success page
+			res.writeHead(200, { "Content-Type": "text/html" });
+			res.end(`
+				<!DOCTYPE html>
+				<html>
+				<head>
+					<title>Authorization Successful</title>
+					<style>
+						body {
+							font-family: Arial, sans-serif;
+							display: flex;
+							justify-content: center;
+							align-items: center;
+							height: 100vh;
+							margin: 0;
+							background: #f5f5f5;
+						}
+						.container {
+							text-align: center;
+							background: white;
+							padding: 40px;
+							border-radius: 8px;
+							box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+						}
+						h1 { color: #4285f4; }
+						p { color: #666; }
+					</style>
+				</head>
+				<body>
+					<div class="container">
+						<h1>✓ Authorization Successful</h1>
+						<p>You can close this window now.</p>
+					</div>
+					<script>
+						const hash = window.location.hash.substring(1);
+						const params = new URLSearchParams(hash);
+						const token = params.get('access_token');
+						if (token) {
+							sessionStorage.setItem('oauth_token', token);
+						}
+					</script>
+				</body>
+				</html>
+			`);
+
+			// Notify all waiting callbacks
+			setTimeout(() => {
+				oauthCallbacks.forEach(callback => callback());
+			}, 500);
+		} else {
+			res.writeHead(404);
+			res.end("Not found");
+		}
+	});
+
+	oauthServer.listen(3000, "localhost", () => {
+		console.log("OAuth callback server listening on port 3000");
+	});
+
+	oauthServer.on("error", (err) => {
+		if (err.code === "EADDRINUSE") {
+			console.log("Port 3000 already in use, assuming OAuth server is already running");
+		} else {
+			console.error("OAuth server error:", err);
+		}
+	});
+
+	return oauthServer;
+}
+
+ipcMain.handle("open-oauth-window", async (event, authUrl) => {
+	return new Promise((resolve, reject) => {
+		let resolved = false;
+
+		// Ensure OAuth server is running
+		initOAuthServer();
+
+		const oauthWindow = new BrowserWindow({
+			width: 600,
+			height: 700,
+			webPreferences: {
+				nodeIntegration: false,
+				contextIsolation: true,
+			},
+			title: "Sign in with Google",
+		});
+
+		// Register callback for when token is received
+		const checkToken = () => {
+			if (oauthWindow && !oauthWindow.isDestroyed()) {
+				oauthWindow.webContents
+					.executeJavaScript("sessionStorage.getItem('oauth_token')")
+					.then((token) => {
+						if (token && !resolved) {
+							resolved = true;
+							// Remove this callback
+							const index = oauthCallbacks.indexOf(checkToken);
+							if (index > -1) oauthCallbacks.splice(index, 1);
+							oauthWindow.close();
+							resolve(token);
+						}
+					})
+					.catch((err) => {
+						console.error("Error getting token from storage:", err);
+					});
+			}
+		};
+
+		oauthCallbacks.push(checkToken);
+
+		console.log("Opening OAuth URL:", authUrl);
+		oauthWindow.loadURL(authUrl);
+
+		oauthWindow.on("closed", () => {
+			// Remove callback
+			const index = oauthCallbacks.indexOf(checkToken);
+			if (index > -1) oauthCallbacks.splice(index, 1);
+			
+			if (!resolved) {
+				resolved = true;
+				reject(new Error("OAuth window closed by user"));
+			}
+		});
+	});
 });
