@@ -846,62 +846,62 @@
 					</div>
 
 					<div id="dialpadLayer" class="dialpad-layer">
-						<div class="form-group">
+					<div class="form-group">
+						<input
+							type="text"
+							id="callNumber"
+							placeholder="Enter number to dial / DTMF during call"
+							inputmode="numeric"
+						/>
+					</div>
+
+					<div class="dialpad">
+						<button onclick="appendNumber('1')">1</button>
+						<button onclick="appendNumber('2')">2</button>
+						<button onclick="appendNumber('3')">3</button>
+						<button onclick="appendNumber('4')">4</button>
+						<button onclick="appendNumber('5')">5</button>
+						<button onclick="appendNumber('6')">6</button>
+						<button onclick="appendNumber('7')">7</button>
+						<button onclick="appendNumber('8')">8</button>
+						<button onclick="appendNumber('9')">9</button>
+						<button onclick="appendNumber('*')">*</button>
+						<button onclick="appendNumber('0')">0</button>
+						<button onclick="appendNumber('#')">#</button>
+					</div>
+
+					<div class="form-group" style="margin-top: 15px">
+						<label
+							style="
+								display: flex;
+								align-items: center;
+								cursor: pointer;
+							"
+						>
 							<input
-								type="text"
-								id="callNumber"
-								placeholder="Enter number to dial / DTMF during call"
-								inputmode="numeric"
+								type="checkbox"
+								id="hideCallerID"
+								style="width: auto; margin-right: 8px"
 							/>
-						</div>
+							Hide Caller ID (Privacy)
+						</label>
+					</div>
 
-						<div class="dialpad">
-							<button onclick="appendNumber('1')">1</button>
-							<button onclick="appendNumber('2')">2</button>
-							<button onclick="appendNumber('3')">3</button>
-							<button onclick="appendNumber('4')">4</button>
-							<button onclick="appendNumber('5')">5</button>
-							<button onclick="appendNumber('6')">6</button>
-							<button onclick="appendNumber('7')">7</button>
-							<button onclick="appendNumber('8')">8</button>
-							<button onclick="appendNumber('9')">9</button>
-							<button onclick="appendNumber('*')">*</button>
-							<button onclick="appendNumber('0')">0</button>
-							<button onclick="appendNumber('#')">#</button>
-						</div>
-
-						<div class="form-group" style="margin-top: 15px">
-							<label
-								style="
-									display: flex;
-									align-items: center;
-									cursor: pointer;
-								"
-							>
-								<input
-									type="checkbox"
-									id="hideCallerID"
-									style="width: auto; margin-right: 8px"
-								/>
-								Hide Caller ID (Privacy)
-							</label>
-						</div>
-
-						<div class="button-group">
-							<button
-								id="callBtn"
-								class="btn-success"
-								onclick="makeCall()"
-								disabled
-							>
-								📞 Call
-							</button>
+					<div class="button-group">
+						<button
+							id="callBtn"
+							class="btn-success"
+							onclick="makeCall()"
+							disabled
+						>
+							📞 Call
+						</button>
 							<button
 								class="btn-secondary"
 								onclick="clearNumber()"
 							>
-								Clear
-							</button>
+							Clear
+						</button>
 						</div>
 					</div>
 
@@ -2059,21 +2059,21 @@
 						window.electronAPI.openOAuthWindow
 					) {
 						try {
-							const token =
-								await window.electronAPI.openOAuthWindow(authUrl);
-							if (token) {
-								googleAccessToken = token;
-								await localforage.setItem(
-									"google_access_token",
-									token,
-								);
+						const token =
+							await window.electronAPI.openOAuthWindow(authUrl);
+						if (token) {
+							googleAccessToken = token;
+							await localforage.setItem(
+								"google_access_token",
+								token,
+							);
 								
 								// Verify which account this token belongs to
 								await fetchUserEmail();
 								
 								if (currentGoogleEmail) {
 									log(`Google: Successfully signed in as ${currentGoogleEmail}`);
-									updateAuthUI(true);
+							updateAuthUI(true);
 									
 									// Check if we have cached contacts for this account
 									await loadCachedContacts();
@@ -2085,8 +2085,8 @@
 									updateAuthUI(true); // Still show as signed in
 									await loadGoogleContacts(true);
 								}
-							} else {
-								log("Google: Sign-in cancelled or failed");
+						} else {
+							log("Google: Sign-in cancelled or failed");
 							}
 						} catch (oauthError) {
 							// Handle OAuth-specific errors with user-friendly messages
@@ -2293,7 +2293,7 @@
 
 						phoneLines += `
 							<div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin: 2px 0; padding: 3px 0;">
-								<button onclick="event.stopPropagation(); document.getElementById('callNumber').value = '${safePhone}'; setView('phone'); log('Selected: ${safeName} - ${displayNumber}');"
+								<button onclick="event.stopPropagation(); redial('${safePhone}'); log('Selected: ${safeName} - ${displayNumber}');"
 									style="background: none; border: none; color: #007bff; text-decoration: underline; cursor: pointer; font-family: monospace; font-size: 12px; padding: 0; text-align: left;">
 									${displayNumber}
 								</button>
